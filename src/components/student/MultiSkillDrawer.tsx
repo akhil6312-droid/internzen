@@ -107,10 +107,12 @@ export const MultiSkillDrawer: React.FC<MultiSkillDrawerProps> = ({
 
   // Filter catalog skills by selected domains and search query
   const availableSkills = ALL_SKILLS.filter((skill) => {
+    const sName = skill.name || (skill as unknown as { skillName?: string }).skillName || '';
+    const sCat = skill.category || '';
     const inDomain = selectedDomains.includes(skill.domain) || skill.domain === 'soft_skill';
     const matchesSearch =
-      skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.category.toLowerCase().includes(searchQuery.toLowerCase());
+      sName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sCat.toLowerCase().includes(searchQuery.toLowerCase());
     return inDomain && matchesSearch;
   });
 
@@ -135,7 +137,7 @@ export const MultiSkillDrawer: React.FC<MultiSkillDrawerProps> = ({
   const handleBatchAdd = () => {
     const toAdd = ALL_SKILLS.filter((s) => selectedSkillIds.includes(s.id)).map((s) => ({
       id: s.id,
-      name: s.name,
+      name: s.name || (s as unknown as { skillName?: string }).skillName || 'Skill',
       domain: s.domain,
     }));
 

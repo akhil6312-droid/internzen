@@ -97,10 +97,34 @@ export interface UserAccount {
   password?: string;
   college?: string;
   department?: string;
+  targetRole?: string;
   batch?: string;
   company?: string;
   designation?: string;
   skills?: StudentSkill[];
+}
+
+export interface RegisteredUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  role: 'student' | 'recruiter';
+  targetRole?: string;
+  university?: string;
+  college?: string;
+  department?: string;
+  batch?: string;
+  company?: string;
+  designation?: string;
+  profile: StudentProfile;
+  appliedJobs: ApplicationRecord[];
+  verifiedSkills: StudentSkill[];
+  progress?: {
+    readinessScore?: number;
+    completedRemediations?: string[];
+  };
 }
 
 export type ApplicationStatus = 

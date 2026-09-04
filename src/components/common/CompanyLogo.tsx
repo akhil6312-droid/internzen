@@ -7,7 +7,17 @@ import {
   Building, 
   TrendingUp, 
   Compass,
-  Boxes
+  Boxes,
+  CreditCard,
+  Smartphone,
+  Target,
+  Laptop,
+  Send,
+  Terminal,
+  BatteryCharging,
+  ShoppingBag,
+  Coins,
+  BarChart3
 } from 'lucide-react';
 
 interface CompanyLogoProps {
@@ -36,6 +46,126 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
   }[size];
 
   switch (logoType?.toLowerCase()) {
+    case 'phonepe':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-purple-500 flex items-center justify-center text-white shadow-md shadow-purple-600/25 border border-purple-400/30 shrink-0`}
+        >
+          <Smartphone className={iconSizes} />
+        </div>
+      );
+
+    case 'cred':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-zinc-900 via-stone-800 to-slate-900 flex items-center justify-center text-amber-300 shadow-md shadow-amber-500/15 border border-stone-600 shrink-0`}
+        >
+          <CreditCard className={iconSizes} />
+        </div>
+      );
+
+    case 'zerodha':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 border border-blue-400/30 shrink-0`}
+        >
+          <BarChart3 className={iconSizes} />
+        </div>
+      );
+
+    case 'zomato':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-rose-600 via-red-600 to-rose-500 flex items-center justify-center text-white shadow-md shadow-rose-500/20 border border-rose-400/30 shrink-0`}
+        >
+          <Compass className={iconSizes} />
+        </div>
+      );
+
+    case 'groww':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 border border-emerald-400/30 shrink-0`}
+        >
+          <TrendingUp className={iconSizes} />
+        </div>
+      );
+
+    case 'inmobi':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 border border-indigo-400/30 shrink-0`}
+        >
+          <Target className={iconSizes} />
+        </div>
+      );
+
+    case 'browserstack':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-sky-600 via-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 border border-cyan-400/30 shrink-0`}
+        >
+          <Laptop className={iconSizes} />
+        </div>
+      );
+
+    case 'postman':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-orange-600 via-amber-600 to-yellow-500 flex items-center justify-center text-white shadow-md shadow-orange-500/25 border border-orange-400/30 shrink-0`}
+        >
+          <Send className={iconSizes} />
+        </div>
+      );
+
+    case 'urbancompany':
+    case 'urban company':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-slate-900 via-violet-900 to-slate-800 flex items-center justify-center text-violet-300 shadow-md shadow-violet-500/20 border border-violet-500/30 shrink-0`}
+        >
+          <Sparkles className={iconSizes} />
+        </div>
+      );
+
+    case 'juspay':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-violet-700 via-indigo-700 to-blue-700 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 border border-indigo-400/30 shrink-0`}
+        >
+          <Terminal className={iconSizes} />
+        </div>
+      );
+
+    case 'ather':
+    case 'atherenergy':
+    case 'ather energy':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-teal-700 via-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 border border-emerald-400/30 shrink-0`}
+        >
+          <BatteryCharging className={iconSizes} />
+        </div>
+      );
+
+    case 'meesho':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-pink-600 via-rose-600 to-fuchsia-600 flex items-center justify-center text-white shadow-md shadow-pink-500/25 border border-pink-400/30 shrink-0`}
+        >
+          <ShoppingBag className={iconSizes} />
+        </div>
+      );
+
+    case 'coindcx':
+      return (
+        <div
+          className={`${sizeClasses} rounded-xl bg-gradient-to-tr from-indigo-700 via-blue-600 to-cyan-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-cyan-400/30 shrink-0`}
+        >
+          <Coins className={iconSizes} />
+        </div>
+      );
+
     case 'technova':
       return (
         <div

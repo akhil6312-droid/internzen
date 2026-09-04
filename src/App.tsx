@@ -5,7 +5,7 @@ import {
   StudentProfile, 
   ToastMessage, 
   Candidate, 
-  UserAccount, 
+  RegisteredUser,
   ApplicationRecord, 
   ThemeOption,
   SkillDomain
@@ -20,8 +20,15 @@ import { calculateJobMatch } from './engine/matching';
 import { Navbar } from './components/Navbar';
 import { StudentView } from './components/student/StudentView';
 import { RecruiterView } from './components/recruiter/RecruiterView';
+import { AuthPortal } from './components/auth/AuthPortal';
 import { ToastContainer } from './components/Toast';
 import { fireConfetti } from './utils/confetti';
+import { 
+  initDatabase, 
+  getSession, 
+  logoutUser, 
+  updateUserProgress 
+} from './services/dbService';
 
 // Code-split modals so they don't bloat the initial render bundle
 const SkillMirrorModal = lazy(() =>
@@ -41,57 +48,38 @@ const AuthModal = lazy(() =>
 );
 
 export default function App() {
+  // Initialize persistent database on component mount
+  const initialSession = useMemo(() => {
+    initDatabase();
+    return getSession();
+  }, []);
+
   // Theme State
   const [currentTheme, setCurrentTheme] = useState<ThemeOption>(() => {
     const saved = localStorage.getItem('internzen_theme') as ThemeOption;
     return saved || 'dark-slate';
   });
 
-  // User Account State
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
-    const saved = localStorage.getItem('internzen_current_user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
-    }
-    return {
-      id: INITIAL_STUDENT_PROFILE.id,
-      role: 'student',
-      name: INITIAL_STUDENT_PROFILE.name,
-      email: INITIAL_STUDENT_PROFILE.email,
-      college: INITIAL_STUDENT_PROFILE.college,
-      department: INITIAL_STUDENT_PROFILE.department,
-      batch: INITIAL_STUDENT_PROFILE.batch,
-      skills: INITIAL_STUDENT_PROFILE.skills,
-    };
-  });
+  // User Account State (Mandatory Auth Gate entry)
+  const [currentUser, setCurrentUser] = useState<RegisteredUser | null>(initialSession);
 
   const [currentMode, setCurrentMode] = useState<'student' | 'recruiter'>(
     currentUser?.role || 'student'
   );
 
-  // Application Records State (backed by localStorage)
+  // Application Records State (backed by active user in persistent DB)
   const [applications, setApplications] = useState<ApplicationRecord[]>(() => {
-    const saved = localStorage.getItem('internzen_applications');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
+    if (initialSession?.appliedJobs && Array.isArray(initialSession.appliedJobs)) {
+      return initialSession.appliedJobs;
     }
     return INITIAL_APPLICATIONS;
   });
 
   const [studentProfile, setStudentProfile] = useState<StudentProfile>(() => {
-    const appliedIds = applications.map((a) => a.jobId);
-    return {
-      ...INITIAL_STUDENT_PROFILE,
-      appliedJobIds: Array.from(new Set([...INITIAL_STUDENT_PROFILE.appliedJobIds, ...appliedIds])),
-    };
+    if (initialSession?.profile) {
+      return initialSession.profile;
+    }
+    return INITIAL_STUDENT_PROFILE;
   });
 
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
@@ -119,11 +107,6 @@ export default function App() {
     }
   }, [currentUser]);
 
-  // Sync applications to localStorage
-  useEffect(() => {
-    localStorage.setItem('internzen_applications', JSON.stringify(applications));
-  }, [applications]);
-
   // Toast Trigger Helper
   const addToast = (type: 'success' | 'info' | 'warning', title: string, description?: string) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
@@ -140,36 +123,34 @@ export default function App() {
   };
 
   // Handle Login / Registration Success
-  const handleLoginSuccess = (user: UserAccount) => {
+  const handleLoginSuccess = (user: RegisteredUser) => {
     setCurrentUser(user);
-    localStorage.setItem('internzen_current_user', JSON.stringify(user));
     setCurrentMode(user.role);
 
-    if (user.role === 'student') {
-      setStudentProfile((prev) => ({
-        ...prev,
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        college: user.college || prev.college,
-        department: user.department || prev.department,
-        batch: user.batch || prev.batch,
-        skills: user.skills && user.skills.length > 0 ? user.skills : prev.skills,
-      }));
+    if (user.role === 'student' && user.profile) {
+      setStudentProfile(user.profile);
+      if (user.appliedJobs) {
+        setApplications(user.appliedJobs);
+      }
+    } else {
+      if (user.profile) setStudentProfile(user.profile);
+      if (user.appliedJobs) setApplications(user.appliedJobs);
     }
+
+    setAuthModalOpen(false);
 
     addToast(
       'success',
       `Welcome, ${user.name}!`,
-      `Successfully authenticated as ${user.role === 'student' ? 'Student' : 'Recruiter'}.`
+      `Successfully authenticated as ${user.role === 'student' ? 'Student Candidate' : 'Hiring Partner'}.`
     );
   };
 
-  // Handle Logout
+  // Handle Logout (Clears session and returns to Auth Gate)
   const handleLogout = () => {
+    logoutUser();
     setCurrentUser(null);
-    localStorage.removeItem('internzen_current_user');
-    addToast('info', 'Logged Out', 'You have been signed out. Click Log In anytime to switch or test accounts.');
+    addToast('info', 'Logged Out', 'You have been signed out. Welcome back anytime.');
   };
 
   const handleOpenAuth = (mode: 'signin' | 'signup' = 'signin') => {
@@ -177,7 +158,7 @@ export default function App() {
     setAuthModalOpen(true);
   };
 
-  // Toggle single skill possession
+  // Toggle single skill possession with persistent database sync
   const handleToggleSkillLearned = (skillId: string, skillName: string) => {
     setStudentProfile((prev) => {
       const exists = prev.skills.find((s) => s.skillId === skillId);
@@ -205,14 +186,24 @@ export default function App() {
         addToast('success', `🎉 ${skillName} Verified!`, `Skill added to verified profile.`);
       }
 
-      return {
+      const updatedProfile: StudentProfile = {
         ...prev,
         skills: updatedSkills,
       };
+
+      // Sync progress to persistent client database
+      if (currentUser) {
+        updateUserProgress(currentUser.id, {
+          verifiedSkills: updatedSkills,
+          profile: updatedProfile,
+        });
+      }
+
+      return updatedProfile;
     });
   };
 
-  // Batch add skills from MultiSkillDrawer
+  // Batch add skills from MultiSkillDrawer with persistent database sync
   const handleBatchAddSkills = (skillsToAdd: { id: string; name: string; domain?: SkillDomain }[]) => {
     setStudentProfile((prev) => {
       const existingMap = new Map(prev.skills.map((s) => [s.skillId, s]));
@@ -227,10 +218,21 @@ export default function App() {
         });
       });
 
-      return {
+      const updatedSkills = Array.from(existingMap.values());
+      const updatedProfile: StudentProfile = {
         ...prev,
-        skills: Array.from(existingMap.values()),
+        skills: updatedSkills,
       };
+
+      // Sync to persistent client database
+      if (currentUser) {
+        updateUserProgress(currentUser.id, {
+          verifiedSkills: updatedSkills,
+          profile: updatedProfile,
+        });
+      }
+
+      return updatedProfile;
     });
 
     addToast(
@@ -254,7 +256,7 @@ export default function App() {
     setVerificationModalJob(job);
   };
 
-  // Final Application Submission from ApplyVerificationModal
+  // Final Application Submission from ApplyVerificationModal with persistent sync
   const handleSubmitVerifiedApplication = (appData: {
     highestEducation: string;
     specialization: string;
@@ -285,11 +287,23 @@ export default function App() {
       missingSkills: breakdown.missingSkills.map((m) => `${m.skillName} (${m.gap}%)`),
     };
 
-    setApplications((prev) => [newRecord, ...prev]);
-    setStudentProfile((prev) => ({
-      ...prev,
-      appliedJobIds: Array.from(new Set([...prev.appliedJobIds, verificationModalJob.id])),
-    }));
+    const updatedApplications = [newRecord, ...applications];
+    const updatedAppliedJobIds = Array.from(new Set([...studentProfile.appliedJobIds, verificationModalJob.id]));
+    const updatedProfile: StudentProfile = {
+      ...studentProfile,
+      appliedJobIds: updatedAppliedJobIds,
+    };
+
+    setApplications(updatedApplications);
+    setStudentProfile(updatedProfile);
+
+    // Persist immediately in database
+    if (currentUser) {
+      updateUserProgress(currentUser.id, {
+        appliedJobs: updatedApplications,
+        profile: updatedProfile,
+      });
+    }
 
     addToast(
       'success',
@@ -303,22 +317,22 @@ export default function App() {
     setVerificationModalJob(null);
   };
 
-  // Handle Withdrawing an Application from My Applications Drawer
+  // Handle Withdrawing an Application from My Applications Drawer with persistent sync
   const handleWithdrawApplication = (applicationId: string, jobId: string, company: string) => {
-    // 1. Remove from applications list and sync localStorage
-    setApplications((prev) => {
-      const updated = prev.filter((app) => app.id !== applicationId);
-      localStorage.setItem('internzen_applications', JSON.stringify(updated));
-      return updated;
-    });
+    const updated = applications.filter((app) => app.id !== applicationId);
+    const updatedJobIds = studentProfile.appliedJobIds.filter((id) => id !== jobId);
+    const updatedProfile: StudentProfile = { ...studentProfile, appliedJobIds: updatedJobIds };
 
-    // 2. Remove jobId from studentProfile.appliedJobIds so the job becomes re-applicable
-    setStudentProfile((prev) => {
-      const updatedJobIds = prev.appliedJobIds.filter((id) => id !== jobId);
-      const updatedProfile = { ...prev, appliedJobIds: updatedJobIds };
-      localStorage.setItem('internzen_student_profile', JSON.stringify(updatedProfile));
-      return updatedProfile;
-    });
+    setApplications(updated);
+    setStudentProfile(updatedProfile);
+
+    // Persist in client database
+    if (currentUser) {
+      updateUserProgress(currentUser.id, {
+        appliedJobs: updated,
+        profile: updatedProfile,
+      });
+    }
 
     addToast(
       'info',
@@ -365,6 +379,17 @@ export default function App() {
     return verificationModalJob ? calculateJobMatch(verificationModalJob, studentProfile.skills) : null;
   }, [verificationModalJob, studentProfile.skills]);
 
+  // MANDATORY AUTH GATE: If user is not authenticated, render the AuthPortal entry screen
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative transition-colors duration-200">
+        <AuthPortal onLoginSuccess={handleLoginSuccess} />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
+
+  // AUTHENTICATED DASHBOARD
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-violet-500/30 selection:text-white relative transition-colors duration-200">
       {/* Background ambient lighting */}

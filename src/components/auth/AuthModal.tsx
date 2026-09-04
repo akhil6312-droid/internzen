@@ -13,14 +13,14 @@ import {
   ArrowRight,
   ShieldCheck
 } from 'lucide-react';
-import { UserAccount } from '../../types';
-import { INITIAL_STUDENT_PROFILE } from '../../data/seed';
+import { RegisteredUser } from '../../types';
+import { loginUser, registerUser } from '../../services/dbService';
 
 interface AuthModalProps {
   isOpen: boolean;
   initialMode?: 'signin' | 'signup';
   onClose: () => void;
-  onLoginSuccess: (user: UserAccount) => void;
+  onLoginSuccess: (user: RegisteredUser) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -53,32 +53,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // 1-Click Quick Demo Login as Aman Sharma (Student)
   const handleQuickDemoStudent = () => {
-    const demoStudent: UserAccount = {
-      id: INITIAL_STUDENT_PROFILE.id,
-      role: 'student',
-      name: INITIAL_STUDENT_PROFILE.name,
-      email: INITIAL_STUDENT_PROFILE.email,
-      college: INITIAL_STUDENT_PROFILE.college,
-      department: INITIAL_STUDENT_PROFILE.department,
-      batch: INITIAL_STUDENT_PROFILE.batch,
-      skills: INITIAL_STUDENT_PROFILE.skills,
-    };
-    onLoginSuccess(demoStudent);
-    onClose();
+    const res = loginUser('aman.sharma@campus.edu', 'password123');
+    if (res.success && res.user) {
+      onLoginSuccess(res.user);
+      onClose();
+    } else {
+      setError(res.error || 'Failed to authenticate student demo.');
+    }
   };
 
   // 1-Click Quick Demo Login as TechNova (Recruiter)
   const handleQuickDemoRecruiter = () => {
-    const demoRecruiter: UserAccount = {
-      id: 'rec-technova-01',
-      role: 'recruiter',
-      name: 'TechNova Talent Lead',
-      email: 'recruiting@technova.ai',
-      company: 'TechNova',
-      designation: 'Campus Hiring Director',
-    };
-    onLoginSuccess(demoRecruiter);
-    onClose();
+    const res = loginUser('recruiter@technova.com', 'password123');
+    if (res.success && res.user) {
+      onLoginSuccess(res.user);
+      onClose();
+    } else {
+      setError(res.error || 'Failed to authenticate recruiter demo.');
+    }
   };
 
   // Handle Sign In submission
@@ -91,40 +83,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // Check stored accounts in localStorage
-    const storedUsersJson = localStorage.getItem('internzen_accounts');
-    const storedUsers: UserAccount[] = storedUsersJson ? JSON.parse(storedUsersJson) : [];
-
-    const matchedUser = storedUsers.find(
-      (u) => u.email.toLowerCase() === signInEmail.trim().toLowerCase()
-    );
-
-    if (matchedUser) {
-      onLoginSuccess(matchedUser);
+    const res = loginUser(signInEmail, signInPassword);
+    if (res.success && res.user) {
+      onLoginSuccess(res.user);
       onClose();
-      return;
+    } else {
+      setError(res.error || 'Invalid credentials. User not found or incorrect password.');
     }
-
-    // Fallback default checks for Aman and TechNova demo accounts
-    if (signInEmail.toLowerCase().includes('technova') || signInEmail.toLowerCase().includes('recruiter')) {
-      handleQuickDemoRecruiter();
-      return;
-    }
-
-    // Otherwise sign in as student account
-    const user: UserAccount = {
-      id: `user-${Date.now()}`,
-      role: 'student',
-      name: signInEmail.split('@')[0].replace('.', ' ') || 'Student User',
-      email: signInEmail.trim(),
-      college: 'Delhi Technological University',
-      department: 'Computer Science',
-      batch: 'Class of 2026',
-      skills: INITIAL_STUDENT_PROFILE.skills,
-    };
-
-    onLoginSuccess(user);
-    onClose();
   };
 
   // Handle Sign Up submission
@@ -142,29 +107,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const newUser: UserAccount = {
-      id: `usr-${Date.now()}`,
-      role: signUpRole,
+    const res = registerUser({
       name: signUpName.trim(),
       email: signUpEmail.trim(),
-      phone: signUpPhone.trim() ? signUpPhone.replace(/\D/g, '') : undefined,
       password: signUpPassword,
-      college: signUpRole === 'student' ? college.trim() || 'Indian Institute of Technology' : undefined,
-      department: signUpRole === 'student' ? department.trim() : undefined,
+      role: signUpRole,
+      university: signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : undefined,
+      college: signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : undefined,
+      targetRole: signUpRole === 'student' ? department.trim() : undefined,
       batch: signUpRole === 'student' ? batch.trim() : undefined,
       company: signUpRole === 'recruiter' ? company.trim() || 'Tech Innovators Corp' : undefined,
       designation: signUpRole === 'recruiter' ? designation.trim() : undefined,
-      skills: signUpRole === 'student' ? INITIAL_STUDENT_PROFILE.skills : undefined,
-    };
+    });
 
-    // Save to localStorage
-    const storedUsersJson = localStorage.getItem('internzen_accounts');
-    const storedUsers: UserAccount[] = storedUsersJson ? JSON.parse(storedUsersJson) : [];
-    storedUsers.push(newUser);
-    localStorage.setItem('internzen_accounts', JSON.stringify(storedUsers));
-
-    onLoginSuccess(newUser);
-    onClose();
+    if (res.success && res.user) {
+      onLoginSuccess(res.user);
+      onClose();
+    } else {
+      setError(res.error || 'Registration failed. Please try again.');
+    }
   };
 
   return (
