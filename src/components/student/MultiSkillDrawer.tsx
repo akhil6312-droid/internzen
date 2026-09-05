@@ -150,7 +150,7 @@ export const MultiSkillDrawer: React.FC<MultiSkillDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/70 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] overflow-hidden bg-slate-950/70 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
       <div className="absolute inset-0" onClick={onClose} />
 
       <motion.div
@@ -192,7 +192,7 @@ export const MultiSkillDrawer: React.FC<MultiSkillDrawerProps> = ({
         </div>
 
         {/* Drawer Body with 2-Step Flow */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 custom-scrollbar">
           <AnimatePresence mode="wait">
             {step === 1 ? (
               /* STEP 1: Domain Selection */

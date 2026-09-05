@@ -11,10 +11,12 @@ import {
   AlertCircle,
   Zap,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import { RegisteredUser } from '../../types';
 import { loginUser, registerUser } from '../../services/dbService';
+import { supabase, mapSupabaseUserToRegisteredUser } from '../../lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ interface AuthModalProps {
   initialRole?: 'student' | 'recruiter';
   onClose: () => void;
   onLoginSuccess: (user: RegisteredUser) => void;
+  onToast?: (type: 'success' | 'info' | 'warning', title: string, description?: string) => void;
 }
 
 const TARGET_ROLE_OPTIONS = [
@@ -40,10 +43,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialRole = 'student',
   onClose,
   onLoginSuccess,
+  onToast,
 }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sign in form state
   const [signInEmail, setSignInEmail] = useState('');
@@ -57,6 +63,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setActiveTab(initialMode);
       setSignUpRole(initialRole);
       setError(null);
+      setAuthNotice(null);
+      setIsSubmitting(false);
     }
   }, [isOpen, initialMode, initialRole]);
   const [signUpName, setSignUpName] = useState('');
@@ -75,6 +83,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // 1-Click Quick Demo Login as Student
   const handleQuickDemoStudent = () => {
+    setError(null);
+    setAuthNotice(null);
     let res = loginUser('student@internzen.com', 'password123');
     if (!res.success) {
       res = loginUser('aman.sharma@campus.edu', 'password123');
@@ -89,6 +99,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // 1-Click Quick Demo Login as Recruiter
   const handleQuickDemoRecruiter = () => {
+    setError(null);
+    setAuthNotice(null);
     let res = loginUser('recruiter@internzen.com', 'password123');
     if (!res.success) {
       res = loginUser('recruiter@technova.com', 'password123');
@@ -101,36 +113,79 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  // Handle Sign In submission
-  const handleSignIn = (e: React.FormEvent) => {
+  // Handle Sign In submission via Supabase Cloud Auth with Local Fallback
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setAuthNotice(null);
 
-    if (!signInEmail.trim() || !signInPassword.trim()) {
+    const cleanEmail = signInEmail.trim().toLowerCase();
+    const cleanPassword = signInPassword.trim();
+
+    if (!cleanEmail || !cleanPassword) {
       setError('Please fill in both email and password.');
       return;
     }
 
-    const res = loginUser(signInEmail, signInPassword);
-    if (res.success && res.user) {
-      onLoginSuccess(res.user);
-      onClose();
-    } else {
-      setError(res.error || 'Invalid credentials. User not found or incorrect password.');
+    setIsSubmitting(true);
+    try {
+      // 1. Authenticate against Supabase Cloud Auth
+      const { data, error: sbError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: cleanPassword,
+      });
+
+      if (!sbError && data?.user) {
+        const user = mapSupabaseUserToRegisteredUser(data.user);
+        onLoginSuccess(user);
+        onClose();
+        return;
+      }
+
+      // 2. Fallback to local storage (for demo accounts or offline environments)
+      const localRes = loginUser(cleanEmail, cleanPassword);
+      if (localRes.success && localRes.user) {
+        onLoginSuccess(localRes.user);
+        onClose();
+        return;
+      }
+
+      // 3. User feedback for Supabase errors
+      const errorMsg = 'Invalid email or password';
+      setError(errorMsg);
+      onToast?.('warning', 'Authentication Failed', errorMsg);
+    } catch (err: any) {
+      // Fallback check
+      const localRes = loginUser(cleanEmail, cleanPassword);
+      if (localRes.success && localRes.user) {
+        onLoginSuccess(localRes.user);
+        onClose();
+        return;
+      }
+      const errorMsg = 'Invalid email or password';
+      setError(errorMsg);
+      onToast?.('warning', 'Authentication Failed', errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Handle Sign Up submission
-  const handleSignUp = (e: React.FormEvent) => {
+  // Handle Sign Up submission via Supabase Cloud Auth with metadata
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setAuthNotice(null);
 
-    if (!signUpName.trim() || !signUpEmail.trim() || !signUpPassword.trim()) {
+    const cleanEmail = signUpEmail.trim().toLowerCase();
+    const fullName = signUpName.trim();
+    const password = signUpPassword;
+
+    if (!fullName || !cleanEmail || !password) {
       setError('Please complete all required fields.');
       return;
     }
 
-    if (signUpPassword.length < 6) {
+    if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
@@ -144,25 +199,93 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       ? (targetRole === 'Other (Type custom role)' ? customTargetRole.trim() : targetRole)
       : undefined;
 
-    const res = registerUser({
-      name: signUpName.trim(),
-      email: signUpEmail.trim(),
-      password: signUpPassword,
-      role: signUpRole,
-      university: signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : undefined,
-      college: signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : undefined,
-      targetRole: finalSpecialization,
-      specialization: finalSpecialization,
-      batch: signUpRole === 'student' ? batch.trim() : undefined,
-      company: signUpRole === 'recruiter' ? company.trim() || 'Tech Innovators Corp' : undefined,
-      designation: signUpRole === 'recruiter' ? designation.trim() : undefined,
-    });
+    const collegeName = signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : (company.trim() || 'Tech Innovators Corp');
+    const specializationName = finalSpecialization || (signUpRole === 'recruiter' ? (designation.trim() || 'Talent Acquisition') : 'Full-Stack Web Development');
+    const companyName = signUpRole === 'recruiter' ? company.trim() || 'Tech Innovators Corp' : undefined;
+    const designationName = signUpRole === 'recruiter' ? designation.trim() : undefined;
+    const batchName = signUpRole === 'student' ? batch.trim() || 'Class of 2026' : undefined;
 
-    if (res.success && res.user) {
-      onLoginSuccess(res.user);
-      onClose();
-    } else {
-      setError(res.error || 'Registration failed. Please try again.');
+    setIsSubmitting(true);
+    try {
+      const { data, error: sbError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: password,
+        options: {
+          data: {
+            name: fullName,
+            role: signUpRole,
+            college: collegeName,
+            specialization: specializationName,
+            company: companyName,
+            designation: designationName,
+            batch: batchName,
+          },
+        },
+      });
+
+      if (sbError) {
+        if (sbError.message.toLowerCase().includes('already registered')) {
+          setError('An account with this email address already exists. Please sign in instead.');
+        } else {
+          setError(sbError.message);
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If data.user exists: immediately log the user in, save active user info in app state/context, navigate directly to dashboard with a success toast.
+      if (data?.user) {
+        const user = mapSupabaseUserToRegisteredUser(data.user);
+        onLoginSuccess(user);
+        onClose();
+        return;
+      }
+
+      // Fallback local registration if data unexpectedly missing
+      const localRes = registerUser({
+        name: fullName,
+        email: cleanEmail,
+        password: password,
+        role: signUpRole,
+        university: collegeName,
+        college: collegeName,
+        targetRole: finalSpecialization,
+        specialization: finalSpecialization,
+        batch: batchName,
+        company: companyName,
+        designation: designationName,
+      });
+
+      if (localRes.success && localRes.user) {
+        onLoginSuccess(localRes.user);
+        onClose();
+      } else {
+        setError(localRes.error || 'Registration failed. Please try again.');
+      }
+    } catch (err: any) {
+      // Local fallback on network error
+      const localRes = registerUser({
+        name: fullName,
+        email: cleanEmail,
+        password: password,
+        role: signUpRole,
+        university: collegeName,
+        college: collegeName,
+        targetRole: finalSpecialization,
+        specialization: finalSpecialization,
+        batch: batchName,
+        company: companyName,
+        designation: designationName,
+      });
+
+      if (localRes.success && localRes.user) {
+        onLoginSuccess(localRes.user);
+        onClose();
+      } else {
+        setError(err?.message || 'Network exception during registration. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -296,6 +419,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         </div>
 
+        {/* Informational Auth Notice (e.g., verification link dispatched) */}
+        {authNotice && (
+          <div className="mx-4 mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{authNotice}</span>
+          </div>
+        )}
+
         {/* Error Alert */}
         {error && (
           <div className="mx-4 mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
@@ -362,10 +493,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25 transition-all active:scale-[0.98] cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span>Sign In</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Authenticating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
                 </button>
               </motion.form>
             ) : (
@@ -618,10 +759,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full mt-3 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25 transition-all active:scale-[0.98] cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full mt-3 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Register & Launch {signUpRole === 'student' ? 'Student' : 'Recruiter'} Studio</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Registering Cloud Account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Register & Launch {signUpRole === 'student' ? 'Student' : 'Recruiter'} Studio</span>
+                    </>
+                  )}
                 </button>
               </motion.form>
             )}

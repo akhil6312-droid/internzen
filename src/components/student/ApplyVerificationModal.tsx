@@ -146,7 +146,7 @@ export const ApplyVerificationModal: React.FC<ApplyVerificationModalProps> = ({
         className="relative w-full max-w-2xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto"
       >
         {/* Header with Job Branding */}
-        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 sticky top-0 z-20">
+        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 shrink-0 relative pr-12">
           <div className="flex items-center gap-3">
             <CompanyLogo
               logoType={job.logoType}
@@ -168,14 +168,15 @@ export const ApplyVerificationModal: React.FC<ApplyVerificationModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            className="absolute top-4 right-4 z-10 text-slate-400 hover:text-slate-200 cursor-pointer p-2 rounded-lg hover:bg-slate-800/50 transition-colors"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 custom-scrollbar">
           {error && (
             <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />

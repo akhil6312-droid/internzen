@@ -27,21 +27,44 @@ When developing or refactoring UI components in this workspace:
 
 ## Universal Self-Explanatory Info `(i)` Guidance System
 - **Inline Placement**: Place `(i)` info trigger icons inline directly next to the role, skill, or metric title with proper spacing (`inline-flex items-center ml-1.5 sm:ml-2`).
+- **Parent Card Overflow Invariant (`overflow-visible`)**: Any parent card, metric banner, or container hosting an `(i)` trigger button MUST use `relative overflow-visible` (never `overflow-hidden`), preventing CSS bounding box clipping of the `z-[9999]` popover.
 - **Desktop Popover (`>= 768px`)**: Render a Motion spring-physics popover mounted with `z-[9999] pointer-events-auto`, styled with solid high contrast as `max-w-xs w-72 sm:w-80 p-3.5 rounded-xl shadow-2xl bg-slate-900 text-slate-100 text-xs border border-slate-700 text-left` with outside-click dismissal. Trigger container must have `z-30` when active.
 - **Mobile Modal Fallback (`< 768px`)**: Never render floating CSS tooltips on mobile that risk boundary cutoffs. Clicking `(i)` on mobile must open a centered dialog or bottom sheet in a full-screen backdrop (`fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm`).
 
-## Modal Architecture & Viewport Containment Invariants
-When creating or updating modal dialogs in this workspace:
+## Modal & Drawer Architecture Invariants
+When creating or updating modal dialogs or slide-out drawers in this workspace:
 - **Overlay Constraints**: Modals must be mounted in `fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto` with backdrop-click dismissal (`onClick={(e) => e.target === e.currentTarget && onClose()}`).
+- **Slide-Out Drawers**: Slide-out drawers must mount at `fixed inset-0 z-[100]` with `bg-black/60 backdrop-blur-sm`, explicit backdrop click dismissal, and `custom-scrollbar` on the scrollable container.
 - **Container Bounds**: Modal shell must use fluid bounded dimensions: `relative w-full max-w-lg (or max-w-2xl) max-h-[90vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden my-auto`.
 - **Pinned Close Button ('X')**: Pinned to the top-right of the non-scrolling header (`absolute top-4 right-4 z-10 text-slate-400 hover:text-slate-200 cursor-pointer p-2 rounded-lg hover:bg-slate-800/50`) so it is never pushed offscreen or scrolled away.
 - **Scrollable Modal Body**: Wrap inner contents below the header in `<div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">` with fixed/shrink-0 headers and footers to keep controls accessible on all display heights (1080p, 720p, laptops, mobile).
+
+## Client-Side Data Integrity & Storage Resilience
+- **Defensive Structure Validation**: Never assume `JSON.parse(localStorage.getItem(...))` returns valid data. Always validate:
+  * Collections: `Array.isArray(parsed) ? parsed : DEFAULT_COLLECTION`
+  * Objects: `parsed && typeof parsed === 'object' && parsed.id ? parsed : null`
+- **Auto-Repair & Self-Healing**: If corrupt or malformed entries are detected, immediately repair and re-persist default seed values rather than throwing unhandled runtime exceptions.
+
+## Cloud Database Integration & Real-Time Sync Invariants
+When connecting external cloud databases (e.g. Supabase, Firebase) in this workspace:
+- **Dual-Tier Resilience (Cloud-First Fallback)**:
+  * Always attempt cloud hydration on app boot.
+  * If the network request fails, times out, or returns an empty collection, seamlessly fall back to local seed/persistent records (`getAllJobs()`) without throwing unhandled errors or rendering blank feeds.
+- **Dedicated Schema Translation Layer**:
+  * Isolate raw database row structures from application domain models via explicit mapping functions (e.g. `mapSupabaseRowToJob`).
+  * Convert raw database fields (e.g. comma-delimited `skills`) into validated domain structures (`JobRequirement[]`) with deterministic 100% total weight distributions.
+- **Real-Time Deduplication & Channel Lifecycle**:
+  * In `postgres_changes` subscription callbacks, check for existing records by unique ID before updating React state to prevent duplicate card rendering.
+  * Always clean up channel subscriptions on component unmount (`supabase.removeChannel(channel)`).
+- **Asynchronous Submit Guards (`isSubmitting`)**:
+  * Form controls publishing records to cloud databases must implement `isSubmitting` guards to disable submission triggers during in-flight network requests and display active progress indicators.
 
 ## Universal Day/Night Theming & Tailwind v4 Opacity Invariants
 When implementing or modifying UI elements across light/dark themes:
 - **No Hardcoded Dark Cards in Light Mode**: Preview cards, ticker statistics, and interactive widgets must dynamically adapt:
   * Dark: `bg-slate-900/90 border-slate-800 text-slate-100 backdrop-blur-xl`
   * Light: `bg-white border-slate-200 text-slate-900 shadow-xl`
+- **Multi-Role Theme Propagation**: Pass `currentTheme` to all top-level view containers (e.g. `StudentView`, `RecruiterView`). Ensure sub-components (candidate cards, job selectors, filter pills, inputs) dynamically toggle between Light and Dark styles with high contrast.
 - **Tailwind v4 Opacity Handling**: Tailwind v4 arbitrary opacity background classes (e.g. `bg-slate-900/90`, `bg-slate-950/60`) do not match simple `.bg-slate-900` selectors in raw CSS. Always pair them with dynamic theme condition ternaries (`isDark ? '...' : '...'`) or wildcard attribute selectors (`[class*="bg-slate-900/"]`, `[class*="bg-slate-950/"]`) in `index.css` to prevent dark card bleed in Light Mode.
 
 ## Skill Gap Remediation & Career Intelligence Architecture

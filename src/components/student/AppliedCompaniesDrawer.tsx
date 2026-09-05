@@ -62,7 +62,7 @@ export const AppliedCompaniesDrawer: React.FC<AppliedCompaniesDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/70 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] overflow-hidden bg-slate-950/70 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
       <div 
         className="absolute inset-0"
         onClick={onClose}
@@ -128,7 +128,7 @@ export const AppliedCompaniesDrawer: React.FC<AppliedCompaniesDrawerProps> = ({
         </div>
 
         {/* Applications List */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar">
           {applications.length === 0 ? (
             <div className="p-12 text-center bg-slate-950/50 rounded-2xl border border-slate-800 animate-in fade-in">
               <Briefcase className="w-10 h-10 text-slate-600 mx-auto mb-3" />

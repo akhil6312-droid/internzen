@@ -36,6 +36,13 @@ import {
   markNotificationRead,
   markAllNotificationsRead
 } from './services/dbService';
+import { 
+  supabase, 
+  fetchCloudJobs, 
+  mapSupabaseRowToJob, 
+  mapSupabaseUserToRegisteredUser,
+  SupabaseJobRow 
+} from './lib/supabase';
 
 // Code-split modals so they don't bloat the initial render bundle
 const SkillMirrorModal = lazy(() =>
@@ -144,20 +151,68 @@ export default function App() {
     localStorage.setItem('internzen_theme', currentTheme);
   }, [currentTheme]);
 
-  // Session retention check on app load: bypasses landing page if active user session exists in localStorage
+  // Session retention check on app load & live Supabase auth subscription
   useEffect(() => {
-    const activeSession = getSession();
-    if (activeSession) {
-      setCurrentUser(activeSession);
-      setCurrentMode(activeSession.role);
-      setCurrentView('dashboard');
-      if (activeSession.profile) {
-        setStudentProfile(activeSession.profile);
+    let isMounted = true;
+
+    // 1. Check active Supabase cloud session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        const user = mapSupabaseUserToRegisteredUser(session.user);
+        setCurrentUser(user);
+        setCurrentMode(user.role);
+        setCurrentView('dashboard');
+        if (user.profile) {
+          setStudentProfile(user.profile);
+        }
+        if (user.appliedJobs && Array.isArray(user.appliedJobs)) {
+          setApplications(user.appliedJobs);
+        }
+      } else {
+        // Fallback to local session if no active cloud session
+        const activeSession = getSession();
+        if (activeSession) {
+          setCurrentUser(activeSession);
+          setCurrentMode(activeSession.role);
+          setCurrentView('dashboard');
+          if (activeSession.profile) {
+            setStudentProfile(activeSession.profile);
+          }
+          if (activeSession.appliedJobs && Array.isArray(activeSession.appliedJobs)) {
+            setApplications(activeSession.appliedJobs);
+          }
+        }
       }
-      if (activeSession.appliedJobs && Array.isArray(activeSession.appliedJobs)) {
-        setApplications(activeSession.appliedJobs);
+    });
+
+    // 2. Listen to real-time Supabase Auth state changes so reloads never log out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      if (event === 'SIGNED_OUT') {
+        logoutUser();
+        setCurrentUser(null);
+        setCurrentView('landing');
+        return;
       }
-    }
+      if (session?.user) {
+        const user = mapSupabaseUserToRegisteredUser(session.user);
+        setCurrentUser(user);
+        setCurrentMode(user.role);
+        setCurrentView('dashboard');
+        if (user.profile) {
+          setStudentProfile(user.profile);
+        }
+        if (user.appliedJobs && Array.isArray(user.appliedJobs)) {
+          setApplications(user.appliedJobs);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Sync mode with user role
@@ -181,6 +236,53 @@ export default function App() {
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  // Global Cloud Fetch & Real-Time Sync via Supabase
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Initial Cloud Fetch: hydrate cloud rows if present, fallback to local seed jobs
+    fetchCloudJobs().then((cloudJobs) => {
+      if (!isMounted) return;
+      if (cloudJobs && cloudJobs.length > 0) {
+        setJobs(cloudJobs);
+      } else {
+        setJobs(getAllJobs());
+      }
+    });
+
+    // 2. Real-time Subscription: listen for new jobs inserted from any client
+    const channel = supabase
+      .channel('public:jobs')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'jobs' },
+        (payload) => {
+          if (!isMounted || !payload.new) return;
+          const newRow = payload.new as SupabaseJobRow;
+          const mappedJob = mapSupabaseRowToJob(newRow);
+
+          setJobs((prevJobs) => {
+            if (prevJobs.some((j) => j.id === mappedJob.id)) {
+              return prevJobs;
+            }
+            return [mappedJob, ...prevJobs];
+          });
+
+          addToast(
+            'info',
+            'New Opening Available ⚡',
+            `"${mappedJob.title}" at ${mappedJob.company} just dropped on the cloud registry!`
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Handle Login / Registration Success
   const handleLoginSuccess = (user: RegisteredUser) => {
@@ -207,8 +309,13 @@ export default function App() {
     );
   };
 
-  // Handle Logout (Clears session and returns to Landing Page)
-  const handleLogout = () => {
+  // Handle Logout (Clears cloud & local sessions and returns to Landing Page)
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Supabase signOut error:', err);
+    }
     logoutUser();
     setCurrentUser(null);
     setCurrentView('landing');
@@ -440,10 +547,13 @@ export default function App() {
   // Recruiter: Post new opening
   const handleAddJob = (newJob: Job) => {
     addJob(newJob);
-    setJobs(getAllJobs());
+    setJobs((prev) => {
+      const exists = prev.some((j) => j.id === newJob.id);
+      return exists ? prev : [newJob, ...prev];
+    });
     addToast(
       'success',
-      'Opening Published Successfully',
+      'Job published to cloud registry!',
       `"${newJob.title}" at ${newJob.company} is live with 100% validated skill weights.`
     );
   };
@@ -574,6 +684,7 @@ export default function App() {
                 studentProfile={studentProfile}
                 onAddJob={handleAddJob}
                 onToggleShortlist={handleToggleShortlist}
+                currentTheme={currentTheme}
               />
             </motion.div>
           )}
@@ -635,6 +746,7 @@ export default function App() {
           initialRole={authModalRole}
           onClose={() => setAuthModalOpen(false)}
           onLoginSuccess={handleLoginSuccess}
+          onToast={addToast}
         />
 
         {/* Official Contact Modal */}

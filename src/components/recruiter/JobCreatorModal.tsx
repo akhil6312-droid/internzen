@@ -11,6 +11,7 @@ import { Job, JobRequirement } from '../../types';
 import { ALL_SKILLS } from '../../data/seed';
 import { validateRequirementsTotal } from '../../engine/matching';
 import { InfoButton } from '../common/InfoButton';
+import { supabase } from '../../lib/supabase';
 
 interface JobCreatorModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
 
   const [domain, setDomain] = useState<'software' | 'mechanical' | 'teaching' | 'electrical' | 'business'>('software');
   const [selectedCatalogSkill, setSelectedCatalogSkill] = useState(ALL_SKILLS[0].id);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -70,9 +72,13 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
     ]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validation.isValid || !title.trim() || !company.trim()) return;
+    if (!validation.isValid || !title.trim() || !company.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    const skillsString = requirements.map((r) => r.skillName).join(', ');
 
     const newJob: Job = {
       id: `job-${Date.now()}`,
@@ -92,8 +98,35 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
       appliedCandidates: [],
     };
 
-    onSaveJob(newJob);
-    onClose();
+    try {
+      // 1. Insert into Supabase cloud table
+      const { data, error } = await supabase.from('jobs').insert([
+        {
+          title: newJob.title,
+          company: newJob.company,
+          stipend: newJob.stipend,
+          mode: workMode,
+          skills: skillsString,
+          recruiter_email: recruiterEmail || 'recruiter@internzen.com',
+          applicant_count: 0,
+        },
+      ]).select();
+
+      if (error) {
+        console.warn('Supabase cloud insert error, fallback to local:', error.message);
+      } else if (data && data[0]) {
+        newJob.id = `sb-${data[0].id}`;
+        if (data[0].created_at) {
+          newJob.createdAt = data[0].created_at;
+        }
+      }
+    } catch (err) {
+      console.warn('Network exception while saving opening to cloud:', err);
+    } finally {
+      setIsSubmitting(false);
+      onSaveJob(newJob);
+      onClose();
+    }
   };
 
   return (
@@ -111,7 +144,7 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
         className="relative w-full max-w-2xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto"
       >
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900 sticky top-0 z-10">
+        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 shrink-0 relative pr-12">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               Post Skill-First Internship
@@ -122,14 +155,15 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
+            className="absolute top-4 right-4 z-10 text-slate-400 hover:text-slate-200 cursor-pointer p-2 rounded-lg hover:bg-slate-800/50 transition-colors"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 custom-scrollbar">
           {/* Job Basics */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -381,15 +415,15 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
 
             <button
               type="submit"
-              disabled={!validation.isValid || !title.trim() || !company.trim()}
+              disabled={!validation.isValid || !title.trim() || !company.trim() || isSubmitting}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md ${
-                validation.isValid && title.trim() && company.trim()
+                validation.isValid && title.trim() && company.trim() && !isSubmitting
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-violet-500/25 cursor-pointer ring-1 ring-violet-400/40'
                   : 'bg-slate-800 text-slate-500 border border-slate-800 cursor-not-allowed'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Publish Opening (100% Validated)</span>
+              <span>{isSubmitting ? 'Publishing to Cloud Registry...' : 'Publish Opening (100% Validated)'}</span>
             </button>
           </div>
         </form>

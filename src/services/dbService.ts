@@ -155,7 +155,11 @@ export function getUsers(): RegisteredUser[] {
   try {
     const raw = localStorage.getItem(USERS_KEY);
     if (!raw) return initDatabase();
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return initDatabase();
+    }
+    return parsed;
   } catch (err) {
     console.warn('Error reading users from localStorage', err);
     return initDatabase();
@@ -180,7 +184,11 @@ export function getSession(): RegisteredUser | null {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !parsed.id) {
+      return null;
+    }
+    return parsed;
   } catch (err) {
     console.warn('Error reading active session from localStorage', err);
     return null;
