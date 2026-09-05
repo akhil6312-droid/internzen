@@ -8,11 +8,12 @@ import {
   RegisteredUser,
   ApplicationRecord, 
   ThemeOption,
-  SkillDomain
+  SkillDomain,
+  JobApplicant,
+  RecruiterNotification
 } from './types';
 import { 
   INITIAL_STUDENT_PROFILE, 
-  INITIAL_JOBS, 
   RECRUITER_CANDIDATES, 
   INITIAL_APPLICATIONS 
 } from './data/seed';
@@ -20,14 +21,20 @@ import { calculateJobMatch } from './engine/matching';
 import { Navbar } from './components/Navbar';
 import { StudentView } from './components/student/StudentView';
 import { RecruiterView } from './components/recruiter/RecruiterView';
-import { AuthPortal } from './components/auth/AuthPortal';
+import { LandingPage } from './components/landing/LandingPage';
 import { ToastContainer } from './components/Toast';
 import { fireConfetti } from './utils/confetti';
 import { 
   initDatabase, 
   getSession, 
   logoutUser, 
-  updateUserProgress 
+  updateUserProgress,
+  getAllJobs,
+  addJob,
+  recordJobApplication,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead
 } from './services/dbService';
 
 // Code-split modals so they don't bloat the initial render bundle
@@ -45,6 +52,12 @@ const ApplyVerificationModal = lazy(() =>
 );
 const AuthModal = lazy(() =>
   import('./components/auth/AuthModal').then((m) => ({ default: m.AuthModal }))
+);
+const ContactModal = lazy(() =>
+  import('./components/common/ContactModal').then((m) => ({ default: m.ContactModal }))
+);
+const NotificationDrawer = lazy(() =>
+  import('./components/recruiter/NotificationDrawer').then((m) => ({ default: m.NotificationDrawer }))
 );
 
 export default function App() {
@@ -82,8 +95,9 @@ export default function App() {
     return INITIAL_STUDENT_PROFILE;
   });
 
-  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
+  const [jobs, setJobs] = useState<Job[]>(() => getAllJobs());
   const [candidates, setCandidates] = useState<Candidate[]>(RECRUITER_CANDIDATES);
+  const [notifications, setNotifications] = useState<RecruiterNotification[]>(() => getNotifications());
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modals & Drawers States
@@ -91,14 +105,60 @@ export default function App() {
   const [isApplicationsDrawerOpen, setIsApplicationsDrawerOpen] = useState(false);
   const [isMultiSkillDrawerOpen, setIsMultiSkillDrawerOpen] = useState(false);
   const [verificationModalJob, setVerificationModalJob] = useState<Job | null>(null);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+  const [authModalRole, setAuthModalRole] = useState<'student' | 'recruiter'>('student');
 
-  // Sync data-theme attribute on document root
+  // Public Landing Page vs Core Dashboard View State
+  const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>(() => {
+    return initialSession ? 'dashboard' : 'landing';
+  });
+
+  const handleMarkNotificationRead = (id: string) => {
+    markNotificationRead(id);
+    setNotifications(getNotifications());
+  };
+
+  const handleMarkAllNotificationsRead = () => {
+    markAllNotificationsRead();
+    setNotifications(getNotifications());
+  };
+
+  const unreadNotificationsCount = useMemo(() => {
+    return notifications.filter((n) => !n.read).length;
+  }, [notifications]);
+
+  // Sync data-theme and light/dark classes on document root
   useEffect(() => {
+    const isDark = currentTheme !== 'light' && currentTheme !== 'modern-light';
     document.documentElement.setAttribute('data-theme', currentTheme);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem('internzen_theme', currentTheme);
   }, [currentTheme]);
+
+  // Session retention check on app load: bypasses landing page if active user session exists in localStorage
+  useEffect(() => {
+    const activeSession = getSession();
+    if (activeSession) {
+      setCurrentUser(activeSession);
+      setCurrentMode(activeSession.role);
+      setCurrentView('dashboard');
+      if (activeSession.profile) {
+        setStudentProfile(activeSession.profile);
+      }
+      if (activeSession.appliedJobs && Array.isArray(activeSession.appliedJobs)) {
+        setApplications(activeSession.appliedJobs);
+      }
+    }
+  }, []);
 
   // Sync mode with user role
   useEffect(() => {
@@ -126,6 +186,7 @@ export default function App() {
   const handleLoginSuccess = (user: RegisteredUser) => {
     setCurrentUser(user);
     setCurrentMode(user.role);
+    setCurrentView('dashboard');
 
     if (user.role === 'student' && user.profile) {
       setStudentProfile(user.profile);
@@ -146,16 +207,30 @@ export default function App() {
     );
   };
 
-  // Handle Logout (Clears session and returns to Auth Gate)
+  // Handle Logout (Clears session and returns to Landing Page)
   const handleLogout = () => {
     logoutUser();
     setCurrentUser(null);
+    setCurrentView('landing');
     addToast('info', 'Logged Out', 'You have been signed out. Welcome back anytime.');
   };
 
-  const handleOpenAuth = (mode: 'signin' | 'signup' = 'signin') => {
+  const handleOpenAuth = (
+    mode: 'signin' | 'signup' = 'signin',
+    role: 'student' | 'recruiter' = 'student'
+  ) => {
     setAuthModalMode(mode);
+    setAuthModalRole(role);
     setAuthModalOpen(true);
+  };
+
+  const handleExplorePortal = (persona: 'student' | 'recruiter') => {
+    if (currentUser) {
+      setCurrentMode(persona);
+      setCurrentView('dashboard');
+    } else {
+      handleOpenAuth('signup', persona);
+    }
   };
 
   // Toggle single skill possession with persistent database sync
@@ -305,6 +380,27 @@ export default function App() {
       });
     }
 
+    // Closed-loop applicant record in global job directory and recruiter notification
+    const applicantRecord: JobApplicant = {
+      id: currentUser?.id || `cand-${Date.now()}`,
+      name: currentUser?.name || studentProfile.name,
+      email: currentUser?.email || 'student@internzen.com',
+      college: studentProfile.college || currentUser?.university || 'Engineering Candidate',
+      matchScore: breakdown.score,
+      appliedAt: new Date().toISOString(),
+      resumeFileName: appData.resumeFileName,
+      highestEducation: appData.highestEducation,
+      specialization: appData.specialization,
+    };
+
+    const dispatchResult = recordJobApplication(verificationModalJob.id, applicantRecord);
+    if (dispatchResult.updatedJobs) {
+      setJobs(dispatchResult.updatedJobs);
+    }
+    if (dispatchResult.notification) {
+      setNotifications(getNotifications());
+    }
+
     addToast(
       'success',
       `🚀 Dispatched to ${verificationModalJob.company}!`,
@@ -343,7 +439,8 @@ export default function App() {
 
   // Recruiter: Post new opening
   const handleAddJob = (newJob: Job) => {
-    setJobs((prev) => [newJob, ...prev]);
+    addJob(newJob);
+    setJobs(getAllJobs());
     addToast(
       'success',
       'Opening Published Successfully',
@@ -379,17 +476,38 @@ export default function App() {
     return verificationModalJob ? calculateJobMatch(verificationModalJob, studentProfile.skills) : null;
   }, [verificationModalJob, studentProfile.skills]);
 
-  // MANDATORY AUTH GATE: If user is not authenticated, render the AuthPortal entry screen
-  if (!currentUser) {
+  // PUBLIC LANDING PAGE (LinkedIn / Linear Aesthetic Overview)
+  if (currentView === 'landing') {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative transition-colors duration-200">
-        <AuthPortal onLoginSuccess={handleLoginSuccess} />
+        <LandingPage
+          onOpenAuth={handleOpenAuth}
+          onExplorePortal={handleExplorePortal}
+          currentTheme={currentTheme}
+          onThemeChange={setCurrentTheme}
+          onOpenContact={() => setIsContactModalOpen(true)}
+          currentUser={currentUser}
+          jobs={jobs}
+        />
+        <Suspense fallback={null}>
+          <AuthModal
+            isOpen={authModalOpen}
+            initialMode={authModalMode}
+            initialRole={authModalRole}
+            onClose={() => setAuthModalOpen(false)}
+            onLoginSuccess={handleLoginSuccess}
+          />
+          <ContactModal
+            isOpen={isContactModalOpen}
+            onClose={() => setIsContactModalOpen(false)}
+          />
+        </Suspense>
         <ToastContainer toasts={toasts} onDismiss={removeToast} />
       </div>
     );
   }
 
-  // AUTHENTICATED DASHBOARD
+  // CORE PLACEMENT DASHBOARD
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-violet-500/30 selection:text-white relative transition-colors duration-200">
       {/* Background ambient lighting */}
@@ -410,6 +528,10 @@ export default function App() {
         onThemeChange={setCurrentTheme}
         onOpenAuth={handleOpenAuth}
         onLogout={handleLogout}
+        unreadNotificationsCount={unreadNotificationsCount}
+        onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
+        onOpenContact={() => setIsContactModalOpen(true)}
+        onReturnHome={() => setCurrentView('landing')}
       />
 
       {/* Main Vertically Scrollable Content Area */}
@@ -435,6 +557,7 @@ export default function App() {
                 onApply={handleApplyClick}
                 onToggleSkill={handleToggleSkillLearned}
                 onOpenMultiSkillDrawer={() => setIsMultiSkillDrawerOpen(true)}
+                currentTheme={currentTheme}
               />
             </motion.div>
           ) : (
@@ -509,8 +632,24 @@ export default function App() {
         <AuthModal
           isOpen={authModalOpen}
           initialMode={authModalMode}
+          initialRole={authModalRole}
           onClose={() => setAuthModalOpen(false)}
           onLoginSuccess={handleLoginSuccess}
+        />
+
+        {/* Official Contact Modal */}
+        <ContactModal
+          isOpen={isContactModalOpen}
+          onClose={() => setIsContactModalOpen(false)}
+        />
+
+        {/* Recruiter Notifications Drawer */}
+        <NotificationDrawer
+          isOpen={isNotificationDrawerOpen}
+          onClose={() => setIsNotificationDrawerOpen(false)}
+          notifications={notifications}
+          onMarkAsRead={handleMarkNotificationRead}
+          onMarkAllAsRead={handleMarkAllNotificationsRead}
         />
       </Suspense>
 
@@ -525,8 +664,16 @@ export default function App() {
             <span>•</span>
             <span>Skill-First Placement & Career Intelligence</span>
           </div>
-          <div className="text-slate-400 text-[11px]">
-            Empirical Matching Engine: <code className="text-slate-400">Σ (Weight × Possession)</code> • Active Theme: <span className="capitalize font-semibold text-slate-300">{currentTheme.replace('-', ' ')}</span>
+          <div className="flex items-center gap-3 text-slate-400 text-[11px]">
+            <span>Empirical Matching Engine: <code className="text-slate-400">Σ (Weight × Possession)</code></span>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setIsContactModalOpen(true)}
+              className="text-violet-400 hover:text-violet-300 underline font-semibold transition-colors cursor-pointer"
+            >
+              Contact TEAM Zenith
+            </button>
           </div>
         </div>
       </footer>

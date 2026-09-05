@@ -93,6 +93,7 @@ export const INITIAL_STUDENT_PROFILE: StudentProfile = {
   email: 'aman.sharma@campus.edu',
   college: 'Delhi Technological University',
   department: 'Computer Science & Engineering',
+  specialization: 'Full-Stack Web Development',
   batch: 'Class of 2026',
   skills: [
     { skillId: 'sk-py', skillName: 'Python', isVerified: true, proficiencyScore: 1.0, domain: 'software' },

@@ -27,8 +27,22 @@ When developing or refactoring UI components in this workspace:
 
 ## Universal Self-Explanatory Info `(i)` Guidance System
 - **Inline Placement**: Place `(i)` info trigger icons inline directly next to the role, skill, or metric title with proper spacing (`inline-flex items-center ml-1.5 sm:ml-2`).
-- **Desktop Popover (`>= 768px`)**: Render a Motion spring-physics popover mounted with `z-50`, styled as `max-w-xs p-3 rounded-lg shadow-xl bg-slate-800 text-slate-200 text-xs border border-slate-700` with outside-click dismissal.
-- **Mobile Modal Fallback (`< 768px`)**: Never render floating CSS tooltips on mobile that risk boundary cutoffs. Clicking `(i)` on mobile must open a centered dialog or bottom sheet in a full-screen backdrop (`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm`).
+- **Desktop Popover (`>= 768px`)**: Render a Motion spring-physics popover mounted with `z-[9999] pointer-events-auto`, styled with solid high contrast as `max-w-xs w-72 sm:w-80 p-3.5 rounded-xl shadow-2xl bg-slate-900 text-slate-100 text-xs border border-slate-700 text-left` with outside-click dismissal. Trigger container must have `z-30` when active.
+- **Mobile Modal Fallback (`< 768px`)**: Never render floating CSS tooltips on mobile that risk boundary cutoffs. Clicking `(i)` on mobile must open a centered dialog or bottom sheet in a full-screen backdrop (`fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm`).
+
+## Modal Architecture & Viewport Containment Invariants
+When creating or updating modal dialogs in this workspace:
+- **Overlay Constraints**: Modals must be mounted in `fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto` with backdrop-click dismissal (`onClick={(e) => e.target === e.currentTarget && onClose()}`).
+- **Container Bounds**: Modal shell must use fluid bounded dimensions: `relative w-full max-w-lg (or max-w-2xl) max-h-[90vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden my-auto`.
+- **Pinned Close Button ('X')**: Pinned to the top-right of the non-scrolling header (`absolute top-4 right-4 z-10 text-slate-400 hover:text-slate-200 cursor-pointer p-2 rounded-lg hover:bg-slate-800/50`) so it is never pushed offscreen or scrolled away.
+- **Scrollable Modal Body**: Wrap inner contents below the header in `<div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">` with fixed/shrink-0 headers and footers to keep controls accessible on all display heights (1080p, 720p, laptops, mobile).
+
+## Universal Day/Night Theming & Tailwind v4 Opacity Invariants
+When implementing or modifying UI elements across light/dark themes:
+- **No Hardcoded Dark Cards in Light Mode**: Preview cards, ticker statistics, and interactive widgets must dynamically adapt:
+  * Dark: `bg-slate-900/90 border-slate-800 text-slate-100 backdrop-blur-xl`
+  * Light: `bg-white border-slate-200 text-slate-900 shadow-xl`
+- **Tailwind v4 Opacity Handling**: Tailwind v4 arbitrary opacity background classes (e.g. `bg-slate-900/90`, `bg-slate-950/60`) do not match simple `.bg-slate-900` selectors in raw CSS. Always pair them with dynamic theme condition ternaries (`isDark ? '...' : '...'`) or wildcard attribute selectors (`[class*="bg-slate-900/"]`, `[class*="bg-slate-950/"]`) in `index.css` to prevent dark card bleed in Light Mode.
 
 ## Skill Gap Remediation & Career Intelligence Architecture
 - **3-Track Platform Model**: Every missing skill card must display at least 3 distinct curated platform tracks:

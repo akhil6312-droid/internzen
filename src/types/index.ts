@@ -39,17 +39,47 @@ export interface LearningResource {
   duration: string;
 }
 
+export interface JobApplicant {
+  id: string;
+  name: string;
+  email: string;
+  college: string;
+  matchScore: number;
+  appliedAt: string; // ISO string or formatted date
+  resumeFileName?: string;
+  highestEducation?: string;
+  specialization?: string;
+}
+
 export interface Job {
   id: string;
   title: string;
   company: string;
   stipend: string;
   location: string;
+  workMode?: 'Remote' | 'Hybrid' | 'Onsite' | string;
   description: string;
   requirements: JobRequirement[];
   domain: SkillDomain;
   logoType: string;
   brandColor: string;
+  recruiterEmail?: string;
+  recruiterId?: string;
+  createdAt?: string; // ISO timestamp
+  applicantCount?: number;
+  appliedCandidates?: JobApplicant[];
+}
+
+export interface RecruiterNotification {
+  id: string;
+  targetRecruiterEmail?: string;
+  title: string;
+  message: string;
+  timestamp: string; // ISO string
+  read: boolean;
+  jobId?: string;
+  jobTitle?: string;
+  applicant?: JobApplicant;
 }
 
 export interface MatchBreakdown {
@@ -66,6 +96,7 @@ export interface StudentProfile {
   email: string;
   college: string;
   department: string;
+  specialization?: string;
   batch: string;
   skills: StudentSkill[];
   appliedJobIds: string[];
@@ -98,6 +129,7 @@ export interface UserAccount {
   college?: string;
   department?: string;
   targetRole?: string;
+  specialization?: string;
   batch?: string;
   company?: string;
   designation?: string;
@@ -112,6 +144,7 @@ export interface RegisteredUser {
   password: string;
   role: 'student' | 'recruiter';
   targetRole?: string;
+  specialization?: string;
   university?: string;
   college?: string;
   department?: string;
@@ -154,6 +187,8 @@ export interface ApplicationRecord {
 }
 
 export type ThemeOption = 
+  | 'dark'
+  | 'light'
   | 'dark-slate' 
   | 'onyx-black' 
   | 'modern-light' 

@@ -9,11 +9,14 @@ import {
   Sparkles, 
   SendHorizontal, 
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Clock,
+  Users
 } from 'lucide-react';
 import { Job, MatchBreakdown } from '../../types';
 import { CompanyLogo } from '../common/CompanyLogo';
 import { InfoButton } from '../common/InfoButton';
+import { formatTimeAgo } from '../../utils/timeAgo';
 
 interface JobCardProps {
   job: Job;
@@ -46,7 +49,7 @@ export const JobCard: React.FC<JobCardProps> = ({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 sm:p-6 transition-all duration-300 flex flex-col justify-between shadow-lg shadow-black/20 group relative overflow-hidden"
+      className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-5 sm:p-6 transition-all duration-300 flex flex-col justify-between shadow-lg shadow-black/20 group relative overflow-visible"
     >
       {/* Top Header Row with Company Vector Logo */}
       <div>
@@ -59,13 +62,22 @@ export const JobCard: React.FC<JobCardProps> = ({
               size="md"
             />
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-xs font-semibold text-slate-300">
                   {job.company}
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 uppercase">
                   {domainLabels[job.domain] || job.domain}
                 </span>
+                <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1 bg-slate-950/60 px-2 py-0.5 rounded-full border border-slate-800">
+                  <Clock className="w-3 h-3 text-violet-400" />
+                  <span>{formatTimeAgo(job.createdAt)}</span>
+                </span>
+                {job.workMode && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                    {job.workMode}
+                  </span>
+                )}
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-violet-300 transition-colors">
                 {job.title}
@@ -164,8 +176,25 @@ export const JobCard: React.FC<JobCardProps> = ({
         </div>
       </div>
 
+      {/* Live Applicant Traction Row */}
+      <div className="flex items-center justify-between py-2 px-3 mb-2 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-slate-300 font-semibold flex items-center gap-1.5 text-xs">
+            <Users className="w-3.5 h-3.5 text-violet-400" />
+            <span>👥 {job.applicantCount ?? job.appliedCandidates?.length ?? 0} Applied Candidates</span>
+          </span>
+        </div>
+        <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
+          Active Hiring
+        </span>
+      </div>
+
       {/* Action Buttons */}
-      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+      <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
         <button
           onClick={() => onOpenDiagnostic(job)}
           className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600 transition-all shadow-sm active:scale-[0.98]"

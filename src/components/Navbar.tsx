@@ -9,10 +9,14 @@ import {
   LogIn, 
   UserPlus, 
   LogOut,
-  Briefcase
+  Briefcase,
+  Bell,
+  Mail,
+  Home
 } from 'lucide-react';
 import { StudentProfile, UserAccount, ThemeOption } from '../types';
 import { ThemeSwitcher } from './common/ThemeSwitcher';
+import { ThemeToggle } from './common/ThemeToggle';
 import { InfoButton } from './common/InfoButton';
 
 interface NavbarProps {
@@ -26,6 +30,10 @@ interface NavbarProps {
   onThemeChange: (theme: ThemeOption) => void;
   onOpenAuth: (mode?: 'signin' | 'signup') => void;
   onLogout: () => void;
+  unreadNotificationsCount?: number;
+  onOpenNotifications?: () => void;
+  onOpenContact?: () => void;
+  onReturnHome?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -39,6 +47,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onThemeChange,
   onOpenAuth,
   onLogout,
+  unreadNotificationsCount = 0,
+  onOpenNotifications,
+  onOpenContact,
+  onReturnHome,
 }) => {
   const verifiedCount = studentProfile.skills.filter((s) => s.isVerified).length;
 
@@ -55,8 +67,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         {/* Logo & Brand Identity */}
-        <div className="flex items-center space-x-3.5 shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/30">
+        <div 
+          onClick={onReturnHome}
+          className={`flex items-center space-x-3.5 shrink-0 ${onReturnHome ? 'cursor-pointer group' : ''}`}
+          title={onReturnHome ? 'Return to Public Landing Page' : undefined}
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/30 group-hover:scale-105 transition-transform">
             <Compass className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -137,6 +153,54 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </button>
           )}
+
+          {/* Recruiter Notifications Bell */}
+          {(currentMode === 'recruiter' || currentUser?.role === 'recruiter') && (
+            <button
+              onClick={onOpenNotifications}
+              className="relative p-2 sm:p-2.5 min-h-[40px] rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group"
+              title="Recruiter Notifications & Candidate Alerts"
+              aria-label={`View alerts (${unreadNotificationsCount} unread)`}
+            >
+              <Bell className="w-4 h-4 text-violet-400 group-hover:scale-110 transition-transform" />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-violet-600 border-2 border-slate-950 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-pulse shadow-md shadow-violet-500/50">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Landing / Home Overview Button */}
+          {onReturnHome && (
+            <button
+              type="button"
+              onClick={onReturnHome}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition-all shadow-sm cursor-pointer group"
+              title="Return to Public Landing Page"
+              aria-label="Return to Landing Page"
+            >
+              <Home className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <span>Overview</span>
+            </button>
+          )}
+
+          {/* Official Contact Us Button */}
+          <button
+            onClick={onOpenContact}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition-all shadow-sm cursor-pointer group"
+            title="Contact TEAM Zenith Support & Operations"
+            aria-label="Contact Support"
+          >
+            <Mail className="w-3.5 h-3.5 text-violet-400 group-hover:scale-110 transition-transform" />
+            <span className="hidden lg:inline">Contact Us</span>
+          </button>
+
+          {/* 1-Click Day / Night Mode Toggle */}
+          <ThemeToggle
+            currentTheme={currentTheme}
+            onThemeChange={onThemeChange}
+          />
 
           {/* 4-Theme Switcher */}
           <ThemeSwitcher
@@ -242,6 +306,51 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="relative z-10 font-bold">Recruiter Mode</span>
           </button>
         </div>
+
+        {/* Mobile Recruiter Alerts Bell */}
+        {(currentMode === 'recruiter' || currentUser?.role === 'recruiter') && (
+          <button
+            onClick={onOpenNotifications}
+            className="relative p-2.5 min-h-[44px] min-w-[44px] rounded-xl text-slate-300 hover:text-white bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer shrink-0"
+            aria-label={`View alerts (${unreadNotificationsCount} unread)`}
+          >
+            <Bell className="w-4 h-4 text-violet-400" />
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-violet-600 border border-slate-950 text-white font-mono text-[9px] font-bold flex items-center justify-center">
+                {unreadNotificationsCount}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Mobile Landing / Home Button */}
+        {onReturnHome && (
+          <button
+            onClick={onReturnHome}
+            className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl text-slate-300 hover:text-white bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer shrink-0"
+            title="Return to Landing Page"
+            aria-label="Return to Landing Page"
+          >
+            <Home className="w-4 h-4 text-indigo-400" />
+          </button>
+        )}
+
+        {/* Mobile Contact Button */}
+        <button
+          onClick={onOpenContact}
+          className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl text-slate-300 hover:text-white bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer shrink-0"
+          title="Contact TEAM Zenith"
+          aria-label="Contact Support"
+        >
+          <Mail className="w-4 h-4 text-violet-400" />
+        </button>
+
+        {/* Mobile Theme Toggle */}
+        <ThemeToggle
+          currentTheme={currentTheme}
+          onThemeChange={onThemeChange}
+          className="p-2.5 min-h-[44px] min-w-[44px] shrink-0"
+        />
 
         <InfoButton
           title="Dual-Persona Mode Switcher"

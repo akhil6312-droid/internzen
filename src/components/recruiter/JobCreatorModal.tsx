@@ -16,17 +16,20 @@ interface JobCreatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveJob: (newJob: Job) => void;
+  recruiterEmail?: string;
 }
 
 export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
   isOpen,
   onClose,
   onSaveJob,
+  recruiterEmail,
 }) => {
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
   const [stipend, setStipend] = useState('₹25,000 / month');
-  const [location, setLocation] = useState('Remote / Hybrid');
+  const [location, setLocation] = useState('Bengaluru');
+  const [workMode, setWorkMode] = useState<'Remote' | 'Hybrid' | 'Onsite'>('Hybrid');
   const [description, setDescription] = useState('');
   const [requirements, setRequirements] = useState<JobRequirement[]>([
     { skillId: 'sk-py', skillName: 'Python', weight: 40 },
@@ -76,12 +79,17 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
       title: title.trim(),
       company: company.trim(),
       stipend: stipend.trim(),
-      location: location.trim(),
+      location: `${location.trim()} / ${workMode}`,
+      workMode,
       description: description.trim() || 'Opportunity created via Recruiter Intelligence Studio.',
       requirements,
       domain,
       logoType: company.toLowerCase().replace(/\s+/g, ''),
       brandColor: domain === 'software' ? '#8b5cf6' : domain === 'mechanical' ? '#0284c7' : domain === 'teaching' ? '#ea580c' : domain === 'electrical' ? '#dc2626' : '#0ea5e9',
+      recruiterEmail: recruiterEmail || 'recruiter@internzen.com',
+      createdAt: new Date().toISOString(),
+      applicantCount: 0,
+      appliedCandidates: [],
     };
 
     onSaveJob(newJob);
@@ -89,13 +97,18 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
         transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl shadow-black/80 overflow-hidden"
+        className="relative w-full max-w-2xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto"
       >
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900 sticky top-0 z-10">
@@ -167,15 +180,37 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Location & Work Mode
+                  Base Location
                 </label>
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Bengaluru / Hybrid"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  placeholder="e.g. Bengaluru, Delhi NCR, Pune"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 min-h-[44px]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Work Mode *
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 min-h-[44px] items-center">
+                  {(['Remote', 'Hybrid', 'Onsite'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setWorkMode(mode)}
+                      className={`h-full min-h-[44px] py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        workMode === mode
+                          ? 'bg-violet-600/30 border-violet-500 text-white shadow-sm ring-1 ring-violet-500/30'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>

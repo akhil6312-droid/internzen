@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -19,13 +19,25 @@ import { loginUser, registerUser } from '../../services/dbService';
 interface AuthModalProps {
   isOpen: boolean;
   initialMode?: 'signin' | 'signup';
+  initialRole?: 'student' | 'recruiter';
   onClose: () => void;
   onLoginSuccess: (user: RegisteredUser) => void;
 }
 
+const TARGET_ROLE_OPTIONS = [
+  'Full-Stack Web Development',
+  'AI / Machine Learning',
+  'DevOps & Cloud',
+  'Mobile App Dev',
+  'Cybersecurity',
+  'Data Science',
+  'Other (Type custom role)',
+];
+
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   initialMode = 'signin',
+  initialRole = 'student',
   onClose,
   onLoginSuccess,
 }) => {
@@ -38,11 +50,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [signInPassword, setSignInPassword] = useState('');
 
   // Sign up form state
-  const [signUpRole, setSignUpRole] = useState<'student' | 'recruiter'>('student');
+  const [signUpRole, setSignUpRole] = useState<'student' | 'recruiter'>(initialRole);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialMode);
+      setSignUpRole(initialRole);
+      setError(null);
+    }
+  }, [isOpen, initialMode, initialRole]);
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPhone, setSignUpPhone] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
+  const [targetRole, setTargetRole] = useState(TARGET_ROLE_OPTIONS[0]);
+  const [customTargetRole, setCustomTargetRole] = useState('');
   const [college, setCollege] = useState('');
   const [department, setDepartment] = useState('Computer Science & Engineering');
   const [batch, setBatch] = useState('Class of 2026');
@@ -51,9 +73,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  // 1-Click Quick Demo Login as Aman Sharma (Student)
+  // 1-Click Quick Demo Login as Student
   const handleQuickDemoStudent = () => {
-    const res = loginUser('aman.sharma@campus.edu', 'password123');
+    let res = loginUser('student@internzen.com', 'password123');
+    if (!res.success) {
+      res = loginUser('aman.sharma@campus.edu', 'password123');
+    }
     if (res.success && res.user) {
       onLoginSuccess(res.user);
       onClose();
@@ -62,9 +87,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  // 1-Click Quick Demo Login as TechNova (Recruiter)
+  // 1-Click Quick Demo Login as Recruiter
   const handleQuickDemoRecruiter = () => {
-    const res = loginUser('recruiter@technova.com', 'password123');
+    let res = loginUser('recruiter@internzen.com', 'password123');
+    if (!res.success) {
+      res = loginUser('recruiter@technova.com', 'password123');
+    }
     if (res.success && res.user) {
       onLoginSuccess(res.user);
       onClose();
@@ -107,6 +135,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
+    if (signUpRole === 'student' && targetRole === 'Other (Type custom role)' && !customTargetRole.trim()) {
+      setError('Please enter your custom specialization.');
+      return;
+    }
+
+    const finalSpecialization = signUpRole === 'student'
+      ? (targetRole === 'Other (Type custom role)' ? customTargetRole.trim() : targetRole)
+      : undefined;
+
     const res = registerUser({
       name: signUpName.trim(),
       email: signUpEmail.trim(),
@@ -114,7 +151,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       role: signUpRole,
       university: signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : undefined,
       college: signUpRole === 'student' ? college.trim() || 'Delhi Technological University' : undefined,
-      targetRole: signUpRole === 'student' ? department.trim() : undefined,
+      targetRole: finalSpecialization,
+      specialization: finalSpecialization,
       batch: signUpRole === 'student' ? batch.trim() : undefined,
       company: signUpRole === 'recruiter' ? company.trim() || 'Tech Innovators Corp' : undefined,
       designation: signUpRole === 'recruiter' ? designation.trim() : undefined,
@@ -129,17 +167,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
         transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl shadow-black/80 overflow-hidden flex flex-col"
+        className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden my-auto"
       >
-        {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
-          <div>
+        {/* Header with Pinned Close Button */}
+        <div className="relative p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 shrink-0">
+          <div className="pr-10">
             <div className="flex items-center gap-1.5 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-violet-400" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-violet-400">
@@ -153,12 +196,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+            className="absolute top-4 right-4 z-10 text-slate-400 hover:text-slate-200 cursor-pointer p-2 rounded-lg hover:bg-slate-800/50 transition-colors"
             aria-label="Close auth dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
 
         {/* 1-Click Quick Demo Login Shortcuts */}
         <div className="p-4 bg-slate-950/70 border-b border-slate-800 space-y-2">
@@ -438,6 +484,69 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {/* Role-Specific Fields */}
                 {signUpRole === 'student' ? (
                   <div className="space-y-2.5 pt-1">
+                    {/* Target Specialization - Dual Mode */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-300">
+                          Target Internship Specialization
+                        </label>
+                        {targetRole === 'Other (Type custom role)' && (
+                          <span className="text-[10px] text-violet-400 font-bold uppercase tracking-wider">
+                            Custom Mode
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Dropdown */}
+                      <select
+                        value={targetRole}
+                        onChange={(e) => setTargetRole(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 min-h-[44px] cursor-pointer"
+                      >
+                        {TARGET_ROLE_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt} className="bg-slate-900 text-white">
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Chips */}
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {TARGET_ROLE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setTargetRole(opt)}
+                            className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                              targetRole === opt
+                                ? 'bg-violet-600/30 border-violet-500 text-violet-200 font-semibold'
+                                : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {opt === 'Other (Type custom role)' ? '✏️ Custom' : opt}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Custom Input */}
+                      {targetRole === 'Other (Type custom role)' && (
+                        <div className="mt-2 p-2.5 rounded-xl bg-violet-950/20 border border-violet-500/40 animate-in fade-in duration-200">
+                          <label className="block text-[11px] font-semibold text-violet-300 mb-1">
+                            Type Custom Specialization *
+                          </label>
+                          <input
+                            type="text"
+                            value={customTargetRole}
+                            onChange={(e) => setCustomTargetRole(e.target.value)}
+                            placeholder="e.g. Blockchain & Web3, IoT, UI/UX"
+                            required
+                            autoFocus
+                            className="w-full px-3 py-2 min-h-[44px] bg-slate-950 border border-violet-500/60 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-400"
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1">
                         College / University Name
@@ -518,9 +627,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
           </AnimatePresence>
         </div>
+        </div>
 
         {/* Modal Footer note */}
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/60 text-center text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
+        <div className="shrink-0 px-5 py-3 border-t border-slate-800 bg-slate-950/60 text-center text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           <span>Deterministic Skill Engine • LocalStorage Secured Session</span>
         </div>

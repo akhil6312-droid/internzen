@@ -15,29 +15,28 @@ import {
   AlertCircle,
   Building,
   Target,
-  Briefcase
+  Briefcase,
+  HelpCircle
 } from 'lucide-react';
 import { RegisteredUser } from '../../types';
 import { loginUser, registerUser } from '../../services/dbService';
 
 interface AuthPortalProps {
   onLoginSuccess: (user: RegisteredUser) => void;
+  onOpenContact?: () => void;
 }
 
 const TARGET_ROLE_OPTIONS = [
   'Full-Stack Web Development',
-  'AI & Machine Learning',
-  'Backend Systems & Cloud (Go/Kafka)',
-  'Data Engineering & Big Data',
-  'Mobile App Development (Flutter/React Native)',
-  'DevOps & Core Infrastructure',
-  'Embedded Systems & IoT',
-  'Web3 & Blockchain Security',
-  'Mechanical CAD & EV Engineering',
-  'Financial Modeling & Risk',
+  'AI / Machine Learning',
+  'DevOps & Cloud',
+  'Mobile App Dev',
+  'Cybersecurity',
+  'Data Science',
+  'Other (Type custom role)',
 ];
 
-export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
+export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess, onOpenContact }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +52,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [targetRole, setTargetRole] = useState(TARGET_ROLE_OPTIONS[0]);
+  const [customTargetRole, setCustomTargetRole] = useState('');
   const [university, setUniversity] = useState('');
   const [batch, setBatch] = useState('Class of 2026');
   const [company, setCompany] = useState('');
@@ -63,7 +63,11 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     setError(null);
     setTimeout(() => {
-      const res = loginUser('aman.sharma@campus.edu', 'password123');
+      // First try student@internzen.com, then aman.sharma@campus.edu
+      let res = loginUser('student@internzen.com', 'password123');
+      if (!res.success) {
+        res = loginUser('aman.sharma@campus.edu', 'password123');
+      }
       if (res.success && res.user) {
         onLoginSuccess(res.user);
       } else {
@@ -77,7 +81,11 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     setError(null);
     setTimeout(() => {
-      const res = loginUser('recruiter@technova.com', 'password123');
+      // First try recruiter@internzen.com, then recruiter@technova.com
+      let res = loginUser('recruiter@internzen.com', 'password123');
+      if (!res.success) {
+        res = loginUser('recruiter@technova.com', 'password123');
+      }
       if (res.success && res.user) {
         onLoginSuccess(res.user);
       } else {
@@ -133,10 +141,19 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
       return;
     }
 
+    if (signUpRole === 'student' && targetRole === 'Other (Type custom role)' && !customTargetRole.trim()) {
+      setError('Please type your custom internship specialization.');
+      return;
+    }
+
     if (signUpRole === 'recruiter' && !company.trim()) {
       setError('Please enter your hiring organization name.');
       return;
     }
+
+    const finalSpecialization = signUpRole === 'student'
+      ? (targetRole === 'Other (Type custom role)' ? customTargetRole.trim() : targetRole)
+      : undefined;
 
     setIsLoading(true);
     const res = registerUser({
@@ -144,8 +161,10 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
       email: signUpEmail,
       password: signUpPassword,
       role: signUpRole,
-      targetRole: signUpRole === 'student' ? targetRole : undefined,
+      targetRole: finalSpecialization,
+      specialization: finalSpecialization,
       university: signUpRole === 'student' ? university : undefined,
+      college: signUpRole === 'student' ? university : undefined,
       batch: signUpRole === 'student' ? batch : undefined,
       company: signUpRole === 'recruiter' ? company : undefined,
       designation: signUpRole === 'recruiter' ? designation : undefined,
@@ -189,6 +208,16 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
             <span className="hidden md:inline">15+ Corporate Tech Leaders Verified</span>
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-emerald-400 font-semibold">Network Live</span>
+            {onOpenContact && (
+              <button
+                type="button"
+                onClick={onOpenContact}
+                className="ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white hover:border-violet-500/50 hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-violet-400" />
+                <span>Contact Us</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -324,9 +353,9 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
 
                   {/* 1-Click Demo Evaluation Row */}
                   <div className="pt-4 border-t border-slate-800/80 mt-5">
-                    <div className="text-center mb-3">
+                    <div className="text-center mb-2.5">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        — Or Rapid Evaluation Demo —
+                        — Rapid Evaluation Accounts —
                       </span>
                     </div>
 
@@ -340,14 +369,17 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-white group-hover:text-violet-300">
                             <GraduationCap className="w-4 h-4 text-violet-400" />
-                            <span>Aman Sharma</span>
+                            <span>Student Account</span>
                           </div>
                           <span className="text-[9px] px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold">
-                            Student
+                            Demo 1-Click
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 leading-tight">
-                          DTU &bull; 85% TechNova match demo
+                        <p className="text-[11px] font-mono text-slate-400 leading-tight">
+                          student@internzen.com
+                        </p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Pass: <span className="font-mono text-slate-400">password123</span>
                         </p>
                       </button>
 
@@ -360,14 +392,17 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-white group-hover:text-emerald-300">
                             <Building2 className="w-4 h-4 text-emerald-400" />
-                            <span>TechNova</span>
+                            <span>Recruiter Account</span>
                           </div>
                           <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-                            Recruiter
+                            Demo 1-Click
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 leading-tight">
-                          Enterprise &bull; 100% Weight Validator
+                        <p className="text-[11px] font-mono text-slate-400 leading-tight">
+                          recruiter@internzen.com
+                        </p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Pass: <span className="font-mono text-slate-400">password123</span>
                         </p>
                       </button>
                     </div>
@@ -485,18 +520,27 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
                   {/* Persona-specific fields */}
                   {signUpRole === 'student' ? (
                     <>
-                      {/* Target Role */}
+                      {/* Target Role - Dual Mode (Preset Chips/Dropdown + Custom Input) */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-300 mb-1">
-                          Target Internship Specialization
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-semibold text-slate-300">
+                            Target Internship Specialization
+                          </label>
+                          {targetRole === 'Other (Type custom role)' && (
+                            <span className="text-[10px] text-violet-400 font-bold uppercase tracking-wider">
+                              Custom Input Mode
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Mode A: Dropdown Selector */}
                         <div className="relative">
-                          <Target className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <Target className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <select
                             value={targetRole}
                             onChange={(e) => setTargetRole(e.target.value)}
                             aria-label="Target Internship Specialization"
-                            className="w-full pl-10 pr-4 py-2 min-h-[44px] bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 transition-colors appearance-none"
+                            className="w-full pl-10 pr-4 py-2 min-h-[44px] bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 transition-colors cursor-pointer"
                           >
                             {TARGET_ROLE_OPTIONS.map((opt) => (
                               <option key={opt} value={opt} className="bg-slate-900 text-white">
@@ -505,6 +549,50 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
                             ))}
                           </select>
                         </div>
+
+                        {/* Mode A: Fast Selection Chips */}
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {TARGET_ROLE_OPTIONS.map((opt) => {
+                            const isSelected = targetRole === opt;
+                            const isOther = opt === 'Other (Type custom role)';
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => setTargetRole(opt)}
+                                className={`text-[11px] px-2.5 py-1 rounded-lg font-medium transition-all border ${
+                                  isSelected
+                                    ? 'bg-violet-600/30 border-violet-500 text-violet-200 shadow-sm font-semibold'
+                                    : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                                }`}
+                              >
+                                {isOther ? '✏️ Other (Custom)' : opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Mode B: Custom Text Input Revealed When "Other" is Selected */}
+                        {targetRole === 'Other (Type custom role)' && (
+                          <div className="mt-2.5 p-3 rounded-xl bg-violet-950/20 border border-violet-500/40 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <label className="block text-xs font-semibold text-violet-300 mb-1">
+                              Custom Specialization / Domain *
+                            </label>
+                            <input
+                              type="text"
+                              value={customTargetRole}
+                              onChange={(e) => setCustomTargetRole(e.target.value)}
+                              placeholder="e.g. Blockchain & Web3, Embedded Systems / IoT, UI/UX Design"
+                              aria-label="Custom Target Domain"
+                              required
+                              autoFocus
+                              className="w-full px-3.5 py-2 min-h-[44px] bg-slate-950 border border-violet-500/60 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition-all"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">
+                              Your custom specialization will be stored in your profile and highlighted on your candidate dashboard.
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {/* University & Batch */}
@@ -600,8 +688,19 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ onLoginSuccess }) => {
       </main>
 
       {/* Footer Strip */}
-      <footer className="relative z-10 w-full border-t border-slate-800/60 bg-slate-950/70 backdrop-blur-xl py-3 text-center text-[11px] text-slate-400">
-        InternZen &bull; Deterministic Linear Skill Matching &bull; Persistent Multi-User Client Engine
+      <footer className="relative z-10 w-full border-t border-slate-800/60 bg-slate-950/70 backdrop-blur-xl py-3 px-4 text-center text-[11px] text-slate-400">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>InternZen &bull; Deterministic Linear Skill Matching &bull; Persistent Multi-User Client Engine</span>
+          {onOpenContact && (
+            <button
+              type="button"
+              onClick={onOpenContact}
+              className="text-violet-400 hover:text-violet-300 underline font-semibold transition-colors cursor-pointer min-h-[44px] flex items-center"
+            >
+              Need Help? Contact TEAM Zenith
+            </button>
+          )}
+        </div>
       </footer>
     </div>
   );
