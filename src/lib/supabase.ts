@@ -88,7 +88,7 @@ export function mapSupabaseRowToJob(row: SupabaseJobRow): Job {
     domain: inferredDomain,
     logoType: (row.company || 'tech').toLowerCase().replace(/\s+/g, ''),
     brandColor,
-    recruiterEmail: row.recruiter_email || 'recruiter@internzen.com',
+    recruiterEmail: row.recruiter_email ? row.recruiter_email.trim() : undefined,
     createdAt: row.created_at || new Date().toISOString(),
     applicantCount: Number(row.applicant_count) || 0,
     appliedCandidates: [],

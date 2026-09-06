@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { 
   Compass, 
   GraduationCap, 
@@ -12,7 +11,8 @@ import {
   Briefcase,
   Bell,
   Mail,
-  Home
+  Home,
+  Plus
 } from 'lucide-react';
 import { StudentProfile, UserAccount, ThemeOption } from '../types';
 import { ThemeSwitcher } from './common/ThemeSwitcher';
@@ -21,24 +21,25 @@ import { InfoButton } from './common/InfoButton';
 
 interface NavbarProps {
   currentMode: 'student' | 'recruiter';
-  onModeChange: (mode: 'student' | 'recruiter') => void;
+  onModeChange?: (mode: 'student' | 'recruiter') => void;
   studentProfile: StudentProfile;
   currentUser: UserAccount | null;
   applicationsCount: number;
   onOpenApplicationsDrawer: () => void;
   currentTheme: ThemeOption;
   onThemeChange: (theme: ThemeOption) => void;
-  onOpenAuth: (mode?: 'signin' | 'signup') => void;
+  onOpenAuth: (mode?: 'signin' | 'signup', role?: 'student' | 'recruiter') => void;
   onLogout: () => void;
   unreadNotificationsCount?: number;
   onOpenNotifications?: () => void;
   onOpenContact?: () => void;
   onReturnHome?: () => void;
+  onOpenJobCreator?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  currentMode,
-  onModeChange,
+  currentMode: _currentMode,
+  onModeChange: _onModeChange,
   studentProfile,
   currentUser,
   applicationsCount,
@@ -51,6 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenNotifications,
   onOpenContact,
   onReturnHome,
+  onOpenJobCreator,
 }) => {
   const verifiedCount = studentProfile.skills.filter((s) => s.isVerified).length;
 
@@ -77,85 +79,79 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
+              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white font-bold">
                 Intern<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-400">Zen</span>
               </span>
-              <span className="hidden md:inline-flex text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                Placement Intelligence
+              <span className="hidden md:inline-flex text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                Job Portal
               </span>
             </div>
-            <p className="hidden lg:block text-[11px] text-slate-400 font-medium tracking-tight">
-              Skill-First Internship & Placement Intelligence
+            <p className="hidden lg:block text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-tight">
+              Find your dream internship or hire top student talent.
             </p>
           </div>
         </div>
 
-        {/* Center/Right Actions: Mode Switcher, My Applications, Theme Switcher & Auth */}
+        {/* Center/Right Actions: Role Indicators, Direct Actions, Theme Switcher & Auth */}
         <div className="flex items-center space-x-2 sm:space-x-2.5">
-          {/* Desktop Animated 2-Way Mode Switcher */}
-          <div className="hidden sm:flex relative p-1 bg-slate-900 border border-slate-800 rounded-xl items-center shadow-inner">
-            <button
-              onClick={() => onModeChange('student')}
-              className={`relative z-10 flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                currentMode === 'student' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {currentMode === 'student' && (
-                <motion.div
-                  layoutId="modeSliderDesktop"
-                  className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg shadow-sm"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <GraduationCap className="w-3.5 h-3.5 relative z-10" />
-              <span className="relative z-10">Student Mode</span>
-            </button>
-
-            <button
-              onClick={() => onModeChange('recruiter')}
-              className={`relative z-10 flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                currentMode === 'recruiter' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {currentMode === 'recruiter' && (
-                <motion.div
-                  layoutId="modeSliderDesktop"
-                  className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg shadow-sm"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <Building2 className="w-3.5 h-3.5 relative z-10" />
-              <span className="relative z-10">Recruiter Mode</span>
-            </button>
-
-            <InfoButton
-              title="Dual-Persona Mode Switcher"
-              description="InternZen serves both placement candidates and hiring partners in one unified platform."
-              rationale="Student Mode lets you assess readiness and bridge skill gaps. Recruiter Mode gives enterprise talent teams weighted candidate ranking and a 100% weight allocator."
-              tip="Switch to Recruiter Mode to see how hiring managers view your application!"
-              placement="bottom-right"
-              className="ml-1"
-            />
-          </div>
-
-          {/* Student "My Applications" Button with Badge */}
-          {currentMode === 'student' && (
-            <button
-              onClick={onOpenApplicationsDrawer}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 min-h-[40px] sm:min-h-0 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 hover:text-white transition-all shadow-sm group"
-              title="View Applied Companies & Tracking"
-              aria-label={`View applied companies (${applicationsCount} applied)`}
-            >
-              <Briefcase className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span className="hidden md:inline">My Applications</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] border border-emerald-500/30">
-                {applicationsCount}
-              </span>
-            </button>
+          {/* Strict Role Indicators & Direct Actions */}
+          {currentUser ? (
+            currentUser.role === 'recruiter' ? (
+              /* Recruiter Controls */
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 dark:text-violet-300 text-xs font-semibold">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Recruiter Studio</span>
+                </div>
+                {onOpenJobCreator && (
+                  <button
+                    onClick={onOpenJobCreator}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-500/20 transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Post New Job</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              /* Student Controls */
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 dark:text-indigo-300 text-xs font-semibold">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>Student Portal</span>
+                </div>
+                <button
+                  onClick={onOpenApplicationsDrawer}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 hover:text-white transition-all shadow-sm group cursor-pointer"
+                  title="View Applied Companies & Tracking"
+                  aria-label={`View applied companies (${applicationsCount} applied)`}
+                >
+                  <Briefcase className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span className="hidden md:inline">My Applications</span>
+                  {applicationsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] border border-emerald-500/30">
+                      {applicationsCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )
+          ) : (
+            /* Guest Controls: Prompt to Sign Up as Recruiter when clicking Post a Job */
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onOpenAuth('signup', 'recruiter')}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-violet-400 hover:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 transition-all cursor-pointer"
+                title="Post a Job on InternZen (Recruiters)"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Post a Job</span>
+              </button>
+            </div>
           )}
 
           {/* Recruiter Notifications Bell */}
-          {(currentMode === 'recruiter' || currentUser?.role === 'recruiter') && (
+          {currentUser?.role === 'recruiter' && (
             <button
               onClick={onOpenNotifications}
               className="relative p-2 sm:p-2.5 min-h-[40px] rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group"
@@ -269,46 +265,61 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Mobile Dedicated Mode Switcher Strip (Sub-Bar with >=44px tap targets) */}
+      {/* Mobile Dedicated Strip (Sub-Bar with >=44px tap targets) */}
       <div className="sm:hidden px-3 py-2 border-t border-slate-800/80 bg-slate-950/95 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-        <div className="relative flex-1 p-1 bg-slate-900 border border-slate-800 rounded-xl flex items-center shadow-inner">
-          <button
-            onClick={() => onModeChange('student')}
-            className={`relative z-10 flex-1 flex items-center justify-center space-x-1.5 px-3 py-2.5 min-h-[44px] text-xs font-semibold rounded-lg transition-colors ${
-              currentMode === 'student' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {currentMode === 'student' && (
-              <motion.div
-                layoutId="modeSliderMobile"
-                className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg shadow-sm"
-                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-              />
-            )}
-            <GraduationCap className="w-4 h-4 relative z-10" />
-            <span className="relative z-10 font-bold">Student Mode</span>
-          </button>
-
-          <button
-            onClick={() => onModeChange('recruiter')}
-            className={`relative z-10 flex-1 flex items-center justify-center space-x-1.5 px-3 py-2.5 min-h-[44px] text-xs font-semibold rounded-lg transition-colors ${
-              currentMode === 'recruiter' ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {currentMode === 'recruiter' && (
-              <motion.div
-                layoutId="modeSliderMobile"
-                className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg shadow-sm"
-                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-              />
-            )}
-            <Building2 className="w-4 h-4 relative z-10" />
-            <span className="relative z-10 font-bold">Recruiter Mode</span>
-          </button>
-        </div>
+        {currentUser ? (
+          currentUser.role === 'recruiter' ? (
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold shrink-0">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Recruiter</span>
+              </div>
+              {onOpenJobCreator && (
+                <button
+                  onClick={onOpenJobCreator}
+                  className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 min-h-[44px] text-xs font-bold rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Post New Job</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold shrink-0">
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Student</span>
+              </div>
+              <button
+                onClick={onOpenApplicationsDrawer}
+                className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 min-h-[44px] text-xs font-bold rounded-lg bg-slate-900 border border-slate-800 text-slate-200 hover:text-white transition-all shadow-sm cursor-pointer"
+              >
+                <Briefcase className="w-4 h-4 text-emerald-400" />
+                <span>My Applications {applicationsCount > 0 ? `(${applicationsCount})` : ''}</span>
+              </button>
+            </div>
+          )
+        ) : (
+          <div className="flex items-center gap-2 flex-1">
+            <button
+              onClick={() => onOpenAuth('signup', 'recruiter')}
+              className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 min-h-[44px] text-xs font-bold rounded-lg bg-violet-500/10 border border-violet-500/30 text-violet-400 hover:text-violet-300 transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Post a Job</span>
+            </button>
+            <button
+              onClick={() => onOpenAuth('signup')}
+              className="flex items-center justify-center px-3 py-2 min-h-[44px] text-xs font-bold rounded-lg bg-violet-600 text-white transition-colors cursor-pointer shrink-0"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Sign Up</span>
+            </button>
+          </div>
+        )}
 
         {/* Mobile Recruiter Alerts Bell */}
-        {(currentMode === 'recruiter' || currentUser?.role === 'recruiter') && (
+        {currentUser?.role === 'recruiter' && (
           <button
             onClick={onOpenNotifications}
             className="relative p-2.5 min-h-[44px] min-w-[44px] rounded-xl text-slate-300 hover:text-white bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer shrink-0"
@@ -353,10 +364,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         />
 
         <InfoButton
-          title="Dual-Persona Mode Switcher"
-          description="InternZen serves both placement candidates and hiring partners in one unified platform."
-          rationale="Student Mode lets you assess readiness and bridge skill gaps. Recruiter Mode gives enterprise talent teams weighted candidate ranking and a 100% weight allocator."
-          tip="Switch to Recruiter Mode to see how hiring managers view your application!"
+          title="InternZen Portal"
+          description="InternZen connects ambitious students with top hiring teams directly through skill-verified applications."
+          rationale="Students see customized match scores and learning tracks. Recruiters see verified skill ratings and applicants."
+          tip="Log in to access your personal dashboard and save your progress!"
           placement="bottom-left"
         />
       </div>

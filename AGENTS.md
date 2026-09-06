@@ -87,3 +87,54 @@ When implementing or modifying UI elements across light/dark themes:
   * Always use block bodies: `ref={(el) => { inputRefs.current[i] = el; }}`
   * Never use concise arrow returns: `ref={(el) => (inputRefs.current[i] = el)}` as this returns the assigned element (`HTMLInputElement | null`), causing `error TS2322: Type '...' is not assignable to type 'void | (() => VoidOrUndefinedOnly)'`.
 
+## Cloud Authentication & Session Lifecycle Invariants (Supabase / Firebase Auth)
+When implementing or modifying cloud authentication and session handling in this workspace:
+- **Immediate Ingress on Registration (`data.user`)**:
+  * When a candidate or recruiter registers, pass domain metadata (`name`, `role`, `college`, `specialization`, `company`, `designation`, `batch`) in `options.data`.
+  * If `data.user` is returned, immediately synthesize the active domain user model, persist the session, close the auth modal, and navigate directly to the customized dashboard with a welcome toast.
+- **Dedicated Auth-to-Domain Translation Layer**:
+  * Isolate cloud auth user objects from application domain models via explicit mapping functions (e.g., `mapSupabaseUserToRegisteredUser`).
+  * Reconstruct domain profiles (`RegisteredUser`, `StudentProfile`) from `user.user_metadata` while retaining existing local records (applied jobs, verified competencies, progress score).
+- **Dual-Tier Authentication Resilience (Local Demo Fallback)**:
+  * Attempt cloud authentication first. If cloud sign-in fails or the network is unreachable, gracefully fall back to local registered records and 1-click hackathon demo accounts (`student@internzen.com`, `recruiter@internzen.com`) so judges and evaluators are never locked out.
+- **Persistent Session & Cross-Tab Auth Synchronization**:
+  * Hydrate active sessions on app mount via `supabase.auth.getSession()`.
+  * Subscribes to `supabase.auth.onAuthStateChange` to prevent reloads from logging the user out and keep multi-tab state synchronized.
+  * Explicitly handle `SIGNED_OUT` events in `onAuthStateChange` to purge local storage and redirect all tabs back to the public landing page.
+- **Toast Feedback for Authentication Failures**:
+  * Failed login attempts must display a prominent warning toast (`"Invalid email or password"`) alongside inline modal error alerts for high visibility across all screen sizes.
+
+## Strict Role-Based Persona Separation & Access Invariants
+When implementing or modifying multi-persona dashboards (Student vs. Recruiter):
+- **No Universal Mode Switcher in Authenticated Views**: Never render universal role-switching toggles or sliders in navbars or footers once a user is authenticated. Dashboards must strictly lock to `currentUser.role`.
+- **Candidate Interface Isolation**: When viewing as a student/candidate, completely hide all recruiter capabilities (e.g. "+ Post New Job", opening creators, candidate leaderboards, shortlist controls). Candidates should only see their job feed, skill diagnostics, learning tracks, and "My Applications".
+- **Recruiter Interface Isolation**: When viewing as a recruiter, hide candidate job application triggers. Recruiters focus exclusively on "My Posted Jobs", "+ Post New Job", applicant metrics, and candidate evaluation pipelines.
+- **Guest Ingress to Role Onboarding**: If an unauthenticated guest attempts recruiter-only actions (such as clicking "Post a Job" or "Post a Job / Hire Talent"), immediately prompt them to register specifically as a recruiter via `onOpenAuth('signup', 'recruiter')`.
+
+## Brand Contrast & Jargon-Free UX Copy Invariants
+- **High-Contrast Brand Typography in Light Mode**: Never hardcode static white text (`text-white`) on brand titles or navbar logos. Always use dynamic theme-adaptive classes (`text-slate-900 dark:text-white font-bold`) so brand identities remain prominent across both Light and Dark themes.
+- **Plain-English UX Terminology**: Eliminate academic, corporate, or internal jargon in favor of direct, human-readable terms:
+  * Replace *"Placement Intelligence"* $\rightarrow$ *"Job Portal"*
+  * Replace *"Post Skill-First Internship"* or *"Recruitment Workflow"* $\rightarrow$ *"Post a New Job"*
+  * Replace *"Skill Requirements & Weights"* $\rightarrow$ *"Required Skills"*
+  * Replace *"satisfied"* $\rightarrow$ *"matched"*
+  * Replace *"Deterministic Skill Decomposition"* $\rightarrow$ *"Skill Breakdown & Weights"*
+  * Tagline must remain clear and inviting: *"Find your dream internship or hire top student talent."*
+
+## Recruiter Job Ownership & Empty State Invariants
+When implementing or modifying recruiter job management and dashboards:
+- **Strict Recruiter Job Isolation**:
+  * In `RecruiterView`, "My Posted Jobs" must only include openings where `job.recruiterEmail === currentUser.email` (or `job.recruiter_email === currentUser.email`) or `job.recruiterId === currentUser.id` (or `job.user_id === currentUser.id`).
+  * Global seed/sample jobs and openings published by other hiring partners must never appear in "My Posted Jobs" or increment the recruiter's "Active Job Openings" KPI count.
+- **Empty State UX & First-Action Ingress**:
+  * When `myPostedJobs.length === 0`:
+    * Suppress/hide job selector pill tags.
+    * Render a prominent empty state card with:
+      - Heading: `"No Jobs Posted Yet"`
+      - Description: `"You have not published any internship listings yet. Start attracting candidates now!"`
+      - Primary CTA Button: `"+ Post Your First Recruitment"` (`min-h-[44px]`), launching `JobCreatorModal`.
+    * Guard candidate ranking leaderboards against `null` active jobs by rendering an informative placeholder card advising the recruiter to publish their first opening to see candidates scored against required skills.
+- **Job Creation Ownership Association & Persistence**:
+  * When creating a job in `JobCreatorModal`, automatically attach the authenticated recruiter's credentials: `recruiter_email: currentUser.email` and `recruiterId: currentUser.id`.
+  * Persist the record directly to the cloud database (`supabase.from('jobs').insert`) and local state.
+  * Automatically set the newly created job as the active selected job so that the recruiter immediately sees candidate rankings, while real-time listeners broadcast the opening to the public Student feed.

@@ -117,6 +117,10 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [authModalRole, setAuthModalRole] = useState<'student' | 'recruiter'>('student');
+  const [isJobCreatorOpen, setIsJobCreatorOpen] = useState(false);
+
+  // Strict role mode: logged in users strictly stick to their role, guests default to student or active mode
+  const effectiveMode: 'student' | 'recruiter' = currentUser ? currentUser.role : currentMode;
 
   // Public Landing Page vs Core Dashboard View State
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>(() => {
@@ -333,10 +337,15 @@ export default function App() {
 
   const handleExplorePortal = (persona: 'student' | 'recruiter') => {
     if (currentUser) {
-      setCurrentMode(persona);
+      setCurrentMode(currentUser.role);
       setCurrentView('dashboard');
     } else {
-      handleOpenAuth('signup', persona);
+      if (persona === 'recruiter') {
+        handleOpenAuth('signup', 'recruiter');
+      } else {
+        setCurrentMode('student');
+        setCurrentView('dashboard');
+      }
     }
   };
 
@@ -628,7 +637,7 @@ export default function App() {
 
       {/* Sticky Top Navigation */}
       <Navbar
-        currentMode={currentMode}
+        currentMode={effectiveMode}
         onModeChange={setCurrentMode}
         studentProfile={studentProfile}
         currentUser={currentUser}
@@ -642,17 +651,18 @@ export default function App() {
         onOpenNotifications={() => setIsNotificationDrawerOpen(true)}
         onOpenContact={() => setIsContactModalOpen(true)}
         onReturnHome={() => setCurrentView('landing')}
+        onOpenJobCreator={() => setIsJobCreatorOpen(true)}
       />
 
       {/* Main Vertically Scrollable Content Area */}
       <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Semantic Level 1 Heading for SEO & Screen-Reader Hierarchy */}
         <h1 className="sr-only">
-          InternZen — Skill-First Internship & Placement Intelligence Platform
+          InternZen — Skill-Based Internship & Job Portal
         </h1>
 
         <AnimatePresence mode="wait">
-          {currentMode === 'student' ? (
+          {effectiveMode === 'student' ? (
             <motion.div
               key="student-view"
               initial={{ opacity: 0, y: 10 }}
@@ -685,6 +695,10 @@ export default function App() {
                 onAddJob={handleAddJob}
                 onToggleShortlist={handleToggleShortlist}
                 currentTheme={currentTheme}
+                isCreatorOpen={isJobCreatorOpen}
+                onOpenCreator={() => setIsJobCreatorOpen(true)}
+                onCloseCreator={() => setIsJobCreatorOpen(false)}
+                currentUser={currentUser}
               />
             </motion.div>
           )}

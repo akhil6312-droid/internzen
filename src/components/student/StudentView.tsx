@@ -213,12 +213,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Verified Competencies</span>
+              <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Verified Skills</span>
               <InfoButton
-                title="Empirical Skill Verification"
-                description="Skills in your portfolio backed by coursework, GitHub repositories, or verified certificates. Only verified skills contribute to deterministic employer compatibility."
-                rationale="Eliminates resume buzzword stuffing by grounding profiles in empirical evidence."
-                tip="Click '+ Add Skill (Multi-Domain)' to browse and add skills across 5 disciplines."
+                title="Verified Skills"
+                description="Skills in your portfolio that have been verified. Only verified skills count toward your job match score."
+                rationale="Ensures employers can trust the skills on your profile."
+                tip="Click '+ Add Skills' to browse and add more skills."
               />
             </div>
             <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
@@ -229,10 +229,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <span className={`text-3xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {verifiedSkillsCount}
             </span>
-            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Verified Skills</span>
+            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Skills</span>
           </div>
           <p className="mt-1 text-[11px] text-emerald-500 dark:text-emerald-400 font-medium">
-            Cross-Disciplinary Profile
+            Skills in your profile
           </p>
         </motion.div>
 
@@ -248,7 +248,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Active Opportunities</span>
+            <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Available Internships</span>
             <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20">
               <Briefcase className="w-4 h-4 text-violet-400" />
             </div>
@@ -260,7 +260,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Open Positions</span>
           </div>
           <p className={`mt-1 text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Across 5 Core Disciplines
+            Live openings accepting applications
           </p>
         </motion.div>
 
@@ -277,12 +277,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Average Readiness</span>
+              <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Average Match Score</span>
               <InfoButton
-                title="Placement Readiness Index"
-                description="The mathematical mean of your compatibility score across all open opportunities. Reflects your overall market employability."
-                rationale="Enables TPOs and students to benchmark overall industry readiness without subjective estimates."
-                tip="Boost your average by bridging gaps on high-frequency skills like SQL, Git, or SolidWorks."
+                title="Average Match Score"
+                description="The average of your match score across all posted internships. Shows your overall readiness."
+                rationale="Gives you a quick look at how widely your skills match the job market."
+                tip="Learn common skills like SQL, Git, or Python to boost your average match!"
               />
             </div>
             <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -293,10 +293,10 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <span className={`text-3xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {averageReadinessScore}%
             </span>
-            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Index Score</span>
+            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Average Match</span>
           </div>
           <p className="mt-1 text-[11px] text-amber-500 dark:text-amber-400 font-medium">
-            Placement Readiness Index
+            Across all available jobs
           </p>
         </motion.div>
 
@@ -313,12 +313,12 @@ export const StudentView: React.FC<StudentViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Threshold Surpassed</span>
+              <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Jobs Ready to Apply</span>
               <InfoButton
-                title="75% Direct Application Threshold"
-                description="Roles where your deterministic score is ≥ 75% unlock Direct Application. Below 75%, companies recommend upskilling first to protect candidate interview pipelines."
-                rationale="Ensures recruiters interview candidates who meet their baseline skill criteria."
-                tip="Use Skill Mirror to identify exactly which missing skill will push you over 75%!"
+                title="Jobs You Can Apply To"
+                description="Internships where your match score is 75% or higher. You can apply directly to these roles right away."
+                rationale="Companies want applicants who match at least 75% of requirements."
+                tip="Use the skill details to see which single skill will unlock more jobs for you!"
               />
             </div>
             <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
@@ -332,7 +332,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>of {jobs.length} Roles</span>
           </div>
           <p className={`mt-1 text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            ≥ 75% Match Unlocked
+            You meet the 75% match requirement
           </p>
         </motion.div>
       </div>
@@ -346,17 +346,17 @@ export const StudentView: React.FC<StudentViewProps> = ({
             <div className="flex items-center gap-2">
               <h3 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 <Sparkles className="w-4 h-4 text-violet-400" />
-                <span>{studentProfile.name}&apos;s Verified Skill Portfolio</span>
+                <span>My Verified Skills</span>
               </h3>
               <InfoButton
-                title="Interactive Skill Simulation"
-                description="Click any skill chip to toggle possession on or off in real-time. Notice how your match scores recalculate instantly across all company openings!"
-                rationale="Allows students and TPOs to simulate 'what-if' career scenarios before dedicating study time."
-                tip="Click '+ Add Skill (Multi-Domain)' to add skills across Mechanical, Teaching, Electronics, and Finance."
+                title="Your Skills"
+                description="These are the skills currently on your profile. Click any skill to turn it on or off and see your job match scores update live!"
+                rationale="Lets you see how learning new skills instantly increases your chances of getting hired."
+                tip="Click '+ Add Skills' to add skills across Software, Mechanical, Teaching, Electronics, or Business."
               />
             </div>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Click any skill chip to toggle possession, or use &quot;+ Add Skill&quot; to multi-select from all domains (Software, Mechanical, Teaching, etc.).
+              Click any skill chip to toggle, or click &quot;+ Add Skills&quot; to add more skills.
             </p>
           </div>
 
@@ -365,7 +365,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
             className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-violet-600 hover:bg-violet-500 text-white shadow-md shadow-violet-500/25 transition-all active:scale-[0.98]"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Add Skill (Multi-Domain)</span>
+            <span>+ Add Skills</span>
           </button>
         </div>
 
@@ -496,7 +496,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Match Ready ≥75% ({readyOpportunitiesCount})
+            Ready to Apply (≥75%) ({readyOpportunitiesCount})
           </button>
           <button
             onClick={() => setReadinessFilter('upskilling')}
@@ -508,7 +508,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Upskilling Needed ({jobs.length - readyOpportunitiesCount})
+            More Skills Needed ({jobs.length - readyOpportunitiesCount})
           </button>
         </div>
       </div>
@@ -517,13 +517,13 @@ export const StudentView: React.FC<StudentViewProps> = ({
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className={`text-lg font-bold tracking-tight flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            <span>Curated Cross-Domain Internship Opportunities</span>
+            <span>Available Internship Opportunities</span>
             <span className={`text-xs font-normal font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               ({filteredJobs.length} roles found)
             </span>
           </h2>
           <span className={`text-xs hidden sm:inline ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Ranked by deterministic compatibility
+            Ranked by your skill match score
           </span>
         </div>
 

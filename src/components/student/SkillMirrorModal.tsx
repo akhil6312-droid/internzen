@@ -110,10 +110,10 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                Skill Mirror Diagnostic
+                Skill Match Details
               </span>
               <span className="text-xs text-slate-400">
-                Deterministic Compatibility Analysis
+                Skill Gap & Learning Plan
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -139,12 +139,12 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
             <div className="flex flex-col items-center justify-center p-4 text-center border-b md:border-b-0 md:border-r border-slate-800">
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Deterministic Match Score
+                  Your Match Score
                 </span>
                 <InfoButton
-                  title="Role Eligibility Score"
-                  description="Your total weighted alignment score for this role. Calculated strictly by summing the weights of all requirements you have verified."
-                  rationale="Reaching 75% unlocks direct application, preventing unqualified candidate rejections."
+                  title="Your Match Score"
+                  description="Your total alignment score for this role. Calculated directly by summing the weights of all requirements you have verified."
+                  rationale="Reaching 75% unlocks direct application, preventing resume rejection."
                   placement="bottom"
                 />
               </div>
@@ -217,7 +217,7 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
                     : `Skill gap identified: You are ${75 - breakdown.score}% away from the threshold.`}
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  InternZen uses deterministic weighting: <code className="text-slate-300">Σ (Requirement Weight × Possession)</code>. No hidden AI hallucinations. Every requirement has clear percentage contribution.
+                  InternZen calculates your match directly from required skills. Each skill has a clear percentage weight.
                 </p>
               </div>
 
@@ -237,12 +237,12 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
                     {hasPowerBI ? (
                       <>
                         <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Power BI Completed (Click to Reset / Unlearn)</span>
+                        <span>Power BI Completed (Click to Reset)</span>
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-3.5 h-3.5 text-emerald-200 animate-spin" />
-                        <span>Mark Power BI as Learned (+15% Score Jump)</span>
+                        <span>Mark Power BI as Learned (+15% Match)</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </>
                     )}
@@ -278,14 +278,14 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span>Deterministic Skill Weight Decomposition</span>
-                  <span className="text-xs font-normal text-slate-400 font-mono">(Sum = 100%)</span>
+                  <span>Skill Breakdown & Weights</span>
+                  <span className="text-xs font-normal text-slate-400 font-mono">(Total = 100%)</span>
                 </h3>
                 <InfoButton
-                  title="Mathematical Weight Decomposition"
-                  description="Shows the exact contribution of each requirement. Possessing a skill awards its full designated percentage weight to your match total."
-                  rationale="Provides mathematical verification of why you qualify or where your deficit lies."
-                  tip="Use the '+ Mark Learned' button in any row to instantly simulate how gaining that skill impacts your match!"
+                  title="Skill Breakdown"
+                  description="Shows how each required skill contributes to your overall score. When you have a skill, its full percentage is added to your match."
+                  rationale="Shows you exactly why you qualify or what skill you need next."
+                  tip="Click 'Mark as Learned' to see how learning that skill increases your score."
                 />
               </div>
             </div>
@@ -296,10 +296,10 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
                 <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
                   <tr>
                     <th className="py-3 px-4">Skill Requirement</th>
-                    <th className="py-3 px-4">Requirement Weight</th>
-                    <th className="py-3 px-4">Possession Status</th>
-                    <th className="py-3 px-4 text-right">Score Contribution</th>
-                    <th className="py-3 px-4 text-center">Interactive Simulation</th>
+                    <th className="py-3 px-4">Weight</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Points Earned</th>
+                    <th className="py-3 px-4 text-center">Try It</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80 bg-slate-900">
@@ -328,12 +328,12 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
                           {isPossessed ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                               <Check className="w-3 h-3 text-emerald-400" />
-                              Possessed & Verified
+                              Completed & Verified
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/20">
                               <X className="w-3 h-3 text-rose-400" />
-                              Skill Deficit (-{req.weight}%)
+                              Missing (-{req.weight}%)
                             </span>
                           )}
                         </td>
@@ -427,16 +427,16 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-violet-400" />
-                    <span>Dedicated Learning Platforms for Every Skill Deficit</span>
+                    <span>Free Learning Courses for Missing Skills</span>
                   </h3>
                   <InfoButton
-                    title="Direct Learning Platform Pathways"
-                    description="Every missing competency has 3 direct platform tracks: FreeCodeCamp/YouTube Video, Coursera/NPTEL Interactive Course, and Official Docs/PDF Cheat Sheet. Mark completed to immediately boost your match score."
-                    rationale="Eliminates the placement knowledge gap with direct, verifiable study modules."
+                    title="Learning Tracks"
+                    description="Each missing skill includes 3 free resources: Video tutorial, Interactive course, and Official documentation. Complete any module to instantly raise your score."
+                    rationale="Helps you quickly learn the exact skills needed to qualify for this job."
                   />
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Actionable 3-track learning pathways mapped directly to each missing requirement
+                  Free courses and tutorials to help you learn each missing skill
                 </p>
               </div>
             </div>
@@ -444,9 +444,9 @@ export const SkillMirrorModal: React.FC<SkillMirrorModalProps> = ({
             {breakdown.missingSkills.length === 0 ? (
               <div className="p-8 text-center bg-slate-950/70 rounded-2xl border border-emerald-500/30">
                 <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                <h4 className="text-sm font-bold text-white">All Requirements Satisfied! Perfect 100% Match!</h4>
+                <h4 className="text-sm font-bold text-white">All Skills Matched! 100% Score!</h4>
                 <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                  You possess all verified competencies required for this role. The direct application threshold (≥ 75%) is unlocked.
+                  You have all the required skills for this role. You are fully ready to apply!
                 </p>
               </div>
             ) : (

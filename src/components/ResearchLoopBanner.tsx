@@ -8,7 +8,7 @@ const LOOP_STEPS = [
     step: 1,
     id: 'assess',
     label: 'Assess',
-    description: 'Verify skills with empirical badges',
+    description: 'Add and verify your skills',
     icon: CheckCircle,
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/20',
@@ -17,7 +17,7 @@ const LOOP_STEPS = [
     step: 2,
     id: 'match',
     label: 'Match',
-    description: 'Weighted deterministic match calculation',
+    description: 'Calculate match score for each job',
     icon: Search,
     color: 'text-indigo-400',
     bg: 'bg-indigo-500/10 border-indigo-500/20',
@@ -25,8 +25,8 @@ const LOOP_STEPS = [
   {
     step: 3,
     id: 'identify',
-    label: 'Identify Gap',
-    description: 'Skill mirror isolates missing requirements',
+    label: 'Find Gaps',
+    description: 'See missing skills for any role',
     icon: Target,
     color: 'text-rose-400',
     bg: 'bg-rose-500/10 border-rose-500/20',
@@ -35,7 +35,7 @@ const LOOP_STEPS = [
     step: 4,
     id: 'learn',
     label: 'Learn',
-    description: 'Curated 1-click micro-learning resources',
+    description: 'Learn missing skills with free courses',
     icon: BookOpen,
     color: 'text-amber-400',
     bg: 'bg-amber-500/10 border-amber-500/20',
@@ -43,8 +43,8 @@ const LOOP_STEPS = [
   {
     step: 5,
     id: 'improve',
-    label: 'Improve Match',
-    description: 'Live recalculation from 85% to 100%',
+    label: 'Boost Score',
+    description: 'Watch your match score increase',
     icon: TrendingUp,
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10 border-emerald-500/20',
@@ -53,7 +53,7 @@ const LOOP_STEPS = [
     step: 6,
     id: 'apply',
     label: 'Apply',
-    description: '1-Click threshold application unlocked (>=75%)',
+    description: 'Apply directly once you reach 75%',
     icon: SendHorizontal,
     color: 'text-violet-400',
     bg: 'bg-violet-500/10 border-violet-500/20',
@@ -71,26 +71,26 @@ export const ResearchLoopBanner: React.FC<ResearchLoopBannerProps> = ({ activeSt
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
-              Research-Backed Placement Loop
+              How InternZen Works
             </span>
             <span className="text-xs text-slate-400 hidden sm:inline">
-              Evidence-based continuous candidate readiness pipeline
+              Your path from learning skills to getting hired
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <h3 className="text-sm sm:text-base font-bold text-white">
-              The Closed-Loop Skill Intelligence Architecture
+              6 Simple Steps to Get Hired
             </h3>
             <InfoButton
-              title="Closed-Loop Placement Model"
-              description="Traditional platforms use black-box keyword filtering. InternZen follows an empirical 6-step loop: ASSESS skills -> MATCH with weights -> IDENTIFY gaps -> LEARN via micro-content -> IMPROVE match score -> APPLY when threshold (≥75%) is met."
-              rationale="Backed by placement research to prevent resume rejection and guide students systematically to qualification."
-              tip="Look for opportunities where learning just 1 missing skill (like Power BI) jumps your score to 100%!"
+              title="How InternZen Works"
+              description="Instead of blindly sending resumes, InternZen shows you what skills jobs need, guides you to learn missing skills, and lets you apply when your match score hits 75%."
+              rationale="Helps you focus on learning the exact skills employers want."
+              tip="Learn just 1 missing skill to boost your match score and qualify!"
             />
           </div>
         </div>
         <div className="text-xs text-slate-400">
-          Threshold Rule: <strong className="text-emerald-400 font-semibold">Score ≥ 75%</strong> unlocks direct application
+          Rule: <strong className="text-emerald-400 font-semibold">Match Score ≥ 75%</strong> unlocks direct application
         </div>
       </div>
 

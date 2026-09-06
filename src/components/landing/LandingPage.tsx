@@ -122,13 +122,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className={`font-extrabold text-lg sm:text-xl tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white font-bold">
                   Intern<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-400">Zen</span>
                 </span>
                 <span className={`hidden sm:inline-flex text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
                   isDark ? 'bg-violet-500/10 text-violet-300 border-violet-500/20' : 'bg-violet-50 text-violet-700 border-violet-200'
                 }`}>
-                  Placement Intelligence 2.0
+                  Job Portal
                 </span>
               </div>
             </div>
@@ -214,16 +214,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 }`}
               >
                 <Sparkles className="w-4 h-4 text-violet-400 animate-spin-slow" />
-                <span>Deterministic Skill-First Placement Intelligence</span>
+                <span>Skill-Based Internship & Hiring Portal</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               </motion.div>
 
               <h1 className={`text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12] ${
                 isDark ? 'text-white' : 'text-slate-900'
               }`}>
-                Bridging Academia & High-Growth Tech Through{' '}
+                Find your dream internship or{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-400">
-                  Deterministic Skill Matching.
+                  hire top student talent.
                 </span>
               </h1>
 
@@ -232,7 +232,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className={`text-sm sm:text-lg font-bold flex items-center gap-2 ${
                   isDark ? 'text-slate-400' : 'text-slate-600'
                 }`}>
-                  <span>Targeted Readiness:</span>
+                  <span>Explore Roles in:</span>
                   <AnimatePresence mode="wait">
                     <motion.span
                       key={textIndex}
@@ -253,7 +253,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <p className={`text-sm sm:text-base max-w-2xl mx-auto lg:mx-0 leading-relaxed ${
                 isDark ? 'text-slate-400' : 'text-slate-600'
               }`}>
-                Say goodbye to arbitrary ATS keyword rejection. InternZen calculates empirical compatibility using exact industry skill weights, empowers students with 3-track remediation pathways, and enables hiring partners to recruit with verifiable confidence.
+                InternZen matches students with real internships based on their skills. See exactly what skills you need, learn what you're missing, and apply directly to top companies.
               </p>
 
               {/* Dual Action CTAs */}
@@ -270,7 +270,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   className="w-full sm:w-auto px-6 py-3.5 min-h-[48px] rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-violet-500/25 ring-1 ring-violet-400/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.98]"
                 >
                   <GraduationCap className="w-4 h-4" />
-                  <span>Explore Student Portal</span>
+                  <span>Find Internships</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -290,7 +290,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   }`}
                 >
                   <Building2 className="w-4 h-4 text-violet-500" />
-                  <span>Recruiter Talent Hub</span>
+                  <span>Post a Job / Hire Talent</span>
                 </button>
               </div>
 
@@ -304,11 +304,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Zero Biased Filtering</span>
+                  <span>Verified Skill Matching</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Award className="w-3.5 h-3.5 text-violet-500" />
-                  <span>Empirical Rubric Verification</span>
+                  <span>Direct Company Applications</span>
                 </div>
               </div>
             </div>
@@ -958,7 +958,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   }`}
                 >
                   <Sparkles className="w-4 h-4 text-violet-400" />
-                  <span>Join Placement Network</span>
+                  <span>Create Free Account</span>
                 </button>
               </div>
             </div>
@@ -974,11 +974,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="flex items-center space-x-2">
             <span className={`font-bold ${isDark ? 'text-slate-300' : 'text-slate-800'}`}>InternZen</span>
             <span>&bull;</span>
-            <span>Empirical Placement Intelligence by TEAM Zenith</span>
+            <span>Internship & Job Portal by TEAM Zenith</span>
           </div>
 
           <div className="flex items-center space-x-4 text-[11px] text-slate-400">
-            <span>Formula: <code className="text-violet-400">Σ (Weight × Possession)</code></span>
+            <span>Skill Matching: <code className="text-violet-400">100% Verified</code></span>
             <span>&bull;</span>
             <button
               type="button"

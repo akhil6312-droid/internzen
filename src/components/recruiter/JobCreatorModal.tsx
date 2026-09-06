@@ -18,6 +18,7 @@ interface JobCreatorModalProps {
   onClose: () => void;
   onSaveJob: (newJob: Job) => void;
   recruiterEmail?: string;
+  recruiterId?: string;
 }
 
 export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
@@ -25,6 +26,7 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
   onClose,
   onSaveJob,
   recruiterEmail,
+  recruiterId,
 }) => {
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
@@ -93,6 +95,7 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
       logoType: company.toLowerCase().replace(/\s+/g, ''),
       brandColor: domain === 'software' ? '#8b5cf6' : domain === 'mechanical' ? '#0284c7' : domain === 'teaching' ? '#ea580c' : domain === 'electrical' ? '#dc2626' : '#0ea5e9',
       recruiterEmail: recruiterEmail || 'recruiter@internzen.com',
+      recruiterId: recruiterId,
       createdAt: new Date().toISOString(),
       applicantCount: 0,
       appliedCandidates: [],
@@ -147,10 +150,10 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 shrink-0 relative pr-12">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
-              Post Skill-First Internship
+              Post a New Job
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Define deterministic skill weights. Must sum to exactly 100%.
+              Set job details and required skill percentages. Total must equal 100%.
             </p>
           </div>
           <button
@@ -167,7 +170,7 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
           {/* Job Basics */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              1. Role Metadata
+              1. Job Details
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -279,22 +282,22 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
             </div>
           </div>
 
-          {/* Dynamic Skill Weight Allocator */}
+          {/* Required Skills Allocator */}
           <div className="space-y-4 pt-2 border-t border-slate-800">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    2. Dynamic Skill Weight Allocator
+                    2. Required Skills
                   </h3>
                   <InfoButton
-                    title="100% Weight Conservation Rule"
-                    description="Every role's skill requirement weights must sum to exactly 100%. This ensures mathematical normalization so applicant scores across different openings are directly comparable."
-                    rationale="Prevents arbitrary grade inflation and establishes a consistent 0-100% candidate qualification scale."
+                    title="100% Skill Weight Rule"
+                    description="Assign how important each skill is. The total must add up to 100% so candidate scores are accurate and fair."
+                    rationale="Helps match candidates based on your most important requirements."
                   />
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Assign percentage weights. InternZen requires exact 100% allocation for deterministic scoring.
+                  Assign percentage importance to each skill. Total must equal 100%.
                 </p>
               </div>
 
@@ -423,7 +426,7 @@ export const JobCreatorModal: React.FC<JobCreatorModalProps> = ({
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Publishing to Cloud Registry...' : 'Publish Opening (100% Validated)'}</span>
+              <span>{isSubmitting ? 'Publishing Job...' : 'Publish Job Opening'}</span>
             </button>
           </div>
         </form>

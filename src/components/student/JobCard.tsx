@@ -99,15 +99,15 @@ export const JobCard: React.FC<JobCardProps> = ({
                 {breakdown.score}% Match
               </div>
               <InfoButton
-                title="Explainable Match Score"
-                description={`Calculated strictly as the sum of recruiter requirement weights for verified skills you possess. For this role, current compatibility is ${breakdown.score}%.`}
-                rationale="Eliminates ATS keyword guesswork by using a deterministic linear model: Score = ∑ (Weight × Possession)."
-                tip="Achieve ≥ 75% to unlock direct application. Click 'Diagnostic & Skill Mirror' to see targeted courses."
+                title="Skill Match Score"
+                description={`Shows how well your verified skills match this job. Your current match is ${breakdown.score}%.`}
+                rationale="Simple, transparent matching so you know exactly where you stand."
+                tip="Reach 75% match to unlock the apply button. Click 'View Skill Details' to see free courses for missing skills."
                 placement="left"
               />
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
-              {isEligible ? 'Qualified to Apply' : 'Requires Upskilling'}
+              {isEligible ? 'Ready to Apply' : 'Need More Skills'}
             </p>
           </div>
         </div>
@@ -133,16 +133,16 @@ export const JobCard: React.FC<JobCardProps> = ({
         <div className="mb-6 space-y-2">
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
             <div className="flex items-center gap-1.5">
-              <span>Skill Requirements & Weights</span>
+              <span>Required Skills</span>
               <InfoButton
-                title="Recruiter Skill Weights"
-                description="Hiring managers assign each skill an explicit weight (summing to 100%). Green chips indicate verified skills in your profile; red chips indicate missing competencies."
-                rationale="Provides complete transparency into why an applicant qualifies or falls short."
+                title="Required Skills"
+                description="Skills needed for this role. Green means you have the skill; red means you need to learn it."
+                rationale="Helps you see exactly what to learn to qualify for this job."
                 placement="bottom"
               />
             </div>
             <span>
-              {breakdown.matchedSkills.length} of {job.requirements.length} satisfied
+              {breakdown.matchedSkills.length} of {job.requirements.length} matched
             </span>
           </div>
 
@@ -200,7 +200,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           className="flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600 transition-all shadow-sm active:scale-[0.98]"
         >
           <Activity className="w-3.5 h-3.5 text-violet-400" />
-          <span>Diagnostic & Skill Mirror</span>
+          <span>Skill Match & Courses</span>
         </button>
 
         {isApplied ? (
